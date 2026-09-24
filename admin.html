@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nia - Admin Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="nav-brand">
+      <h2>Nia</h2>
+      <span class="badge badge-admin">Admin Portal</span>
+    </div>
+    <div class="nav-user">
+      <span id="userEmail">Loading...</span>
+      <a href="dashboard.html" class="btn btn-outline">Student View</a>
+      <button id="logoutBtn" class="btn btn-secondary">Sign Out</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="dash-header">
+      <h1>Post New Opportunity</h1>
+      <p>Add attachment, internship, or entry-level roles for students.</p>
+    </section>
+
+    <div id="adminMessage" class="message hidden"></div>
+
+    <section class="form-box">
+      <form id="postJobForm">
+        <div class="form-group">
+          <label for="jobTitle">Job Title</label>
+          <input type="text" id="jobTitle" required placeholder="e.g. IT Support Intern" />
+        </div>
+
+        <div class="form-group">
+          <label for="companyName">Company / Organization</label>
+          <input type="text" id="companyName" required placeholder="e.g. Tech Point Solutions" />
+        </div>
+
+        <div class="form-group">
+          <label for="jobLocation">Location</label>
+          <input type="text" id="jobLocation" required placeholder="e.g. Voi / Remote" />
+        </div>
+
+        <div class="form-group">
+          <label for="jobType">Opportunity Type</label>
+          <select id="jobType">
+            <option value="Industrial Attachment">Industrial Attachment</option>
+            <option value="Internship">Internship</option>
+            <option value="Full-time">Full-time</option>
+            <option value="Part-time">Part-time</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="jobDesc">Description & Requirements</label>
+          <textarea id="jobDesc" rows="4" required placeholder="Responsibilities, diploma requirements, deadline..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Publish Opportunity</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>

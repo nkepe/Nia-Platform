@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nia - Student Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="nav-brand">
+      <h2>Nia</h2>
+      <span class="badge">Student</span>
+    </div>
+    <div class="nav-user">
+      <span id="userEmail">Loading...</span>
+      <a id="adminPortalLink" href="admin.html" class="btn btn-outline hidden">Admin Panel</a>
+      <button id="logoutBtn" class="btn btn-secondary">Sign Out</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="dash-header">
+      <h1>Available Opportunities</h1>
+      <p>Browse listings and submit your applications directly.</p>
+    </section>
+
+    <div id="statusMessage" class="message hidden"></div>
+
+    <section id="opportunitiesList" class="cards-grid">
+      <p class="loading-text">Fetching listings...</p>
+    </section>
+  </main>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
