@@ -1,12 +1,54 @@
 const SUPABASE_URL = "https://ypaogamdapbvuzwphngh.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_wI8kuJuKQaH2-JO63Og5wA_LjoiHuJ4";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabase = null;
+if (window.supabase) {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
 
-const ADMIN_EMAIL = "davidkasimilu71@gmail.com";
+const ADMIN_EMAILS = [
+  "davidkasimilu71@gmail.com",
+  "nkepedavid@gmail.com"
+];
+
+function showStatusModal(isSuccess, title, message) {
+  const modal = document.getElementById("statusModal");
+  const modalIcon = document.getElementById("statusModalIcon");
+  const modalTitle = document.getElementById("statusModalTitle");
+  const modalMsg = document.getElementById("statusModalMessage");
+
+  if (!modal) {
+    alert(`${title}: ${message}`);
+    return;
+  }
+
+  if (modalIcon) modalIcon.textContent = isSuccess ? "✅" : "⚠️";
+  if (modalTitle) {
+    modalTitle.textContent = title;
+    modalTitle.style.color = isSuccess ? "#16a34a" : "#dc2626";
+  }
+  if (modalMsg) modalMsg.textContent = message;
+
+  modal.classList.remove("hidden");
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // 1. Check Auth & Admin Authorization
+  // Modal close handlers
+  const closeModalBtn = document.getElementById("closeStatusModalBtn");
+  const statusModal = document.getElementById("statusModal");
+  if (closeModalBtn && statusModal) {
+    closeModalBtn.addEventListener("click", () => statusModal.classList.add("hidden"));
+  }
+  window.addEventListener("click", (e) => {
+    if (e.target === statusModal) statusModal.classList.add("hidden");
+  });
+
+  if (!supabase) {
+    alert("Supabase failed to load. Check your internet connection or script CDN tag.");
+    return;
+  }
+
+  // 1. Verify User and Admin Status
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
@@ -14,48 +56,82 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  if (session.user.email !== ADMIN_EMAIL) {
-    alert("Unauthorized: Admin credentials required.");
+  const userEmail = session.user.email ? session.user.email.toLowerCase() : "";
+  const isDirectAdmin = ADMIN_EMAILS.includes(userEmail);
+
+  let isProfileAdmin = false;
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .maybeSingle();
+    isProfileAdmin = profile && profile.role === "admin";
+  } catch (err) {
+    console.error("Profile check error:", err);
+  }
+
+  if (!isDirectAdmin && !isProfileAdmin) {
+    alert("Access Denied: Admin credentials required.");
     window.location.href = "dashboard.html";
     return;
   }
 
-  document.getElementById("userEmail").textContent = session.user.email;
+  const userEmailElem = document.getElementById("userEmail");
+  if (userEmailElem) {
+    userEmailElem.textContent = `${session.user.email} (Admin)`;
+  }
 
   // 2. Sign Out
-  document.getElementById("logoutBtn").addEventListener("click", async () => {
-    await supabase.auth.signOut();
-    window.location.href = "index.html";
-  });
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "index.html";
+    });
+  }
 
-  // 3. Post Job Form Handler
+  // 3. Form Submission
   const postJobForm = document.getElementById("postJobForm");
-  const adminMessage = document.getElementById("adminMessage");
+  const submitBtn = document.getElementById("submitBtn") || postJobForm?.querySelector("button[type='submit']");
 
-  postJobForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  if (postJobForm) {
+    postJobForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    const title = document.getElementById("jobTitle").value.trim();
-    const company = document.getElementById("companyName").value.trim();
-    const location = document.getElementById("jobLocation").value.trim();
-    const type = document.getElementById("jobType").value;
-    const description = document.getElementById("jobDesc").value.trim();
+      const title = document.getElementById("jobTitle")?.value.trim();
+      const company = document.getElementById("companyName")?.value.trim();
+      const location = document.getElementById("jobLocation")?.value.trim();
+      const type = document.getElementById("jobType")?.value || "Industrial Attachment";
+      const description = document.getElementById("jobDesc")?.value.trim();
 
-    const { error } = await supabase.from("opportunities").insert([
-      { title, company, location, type, description }
-    ]);
+      if (!title || !company || !location || !description) {
+        showStatusModal(false, "Incomplete Form", "Please fill in all fields.");
+        return;
+      }
 
-    if (error) {
-      adminMessage.className = "message error";
-      adminMessage.textContent = "Failed to post job: " + error.message;
-      adminMessage.classList.remove("hidden");
-      return;
-    }
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Publishing...";
+      }
 
-    adminMessage.className = "message success";
-    adminMessage.textContent = "Opportunity posted successfully!";
-    adminMessage.classList.remove("hidden");
+      const { error } = await supabase
+        .from("opportunities")
+        .insert([{ title, company, location, type, description }]);
 
-    postJobForm.reset();
-  });
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Publish Opportunity";
+      }
+
+      if (error) {
+        console.error("Supabase insert error:", error);
+        showStatusModal(false, "Failed to Post", error.message);
+        return;
+      }
+
+      showStatusModal(true, "Published!", `Opportunity "${title}" is now live for students.`);
+      postJobForm.reset();
+    });
+  }
 });

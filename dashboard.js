@@ -1,12 +1,20 @@
 const SUPABASE_URL = "https://ypaogamdapbvuzwphngh.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_wI8kuJuKQaH2-JO63Og5wA_LjoiHuJ4";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabase = null;
+if (window.supabase) {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
 
-const ADMIN_EMAIL = "davidkasimilu71@gmail.com";
+const ADMIN_EMAILS = [
+  "davidkasimilu71@gmail.com",
+  "nkepedavid@gmail.com"
+];
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // 1. Auth Guard: Ensure session exists
+  if (!supabase) return;
+
+  // 1. Auth Guard
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
@@ -15,40 +23,46 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   const user = session.user;
-  document.getElementById("userEmail").textContent = user.email;
-
-  // Reveal admin button if user is the admin
-  if (user.email === ADMIN_EMAIL) {
-    document.getElementById("adminPortalLink").classList.remove("hidden");
+  const userEmailElem = document.getElementById("userEmail");
+  if (userEmailElem) {
+    userEmailElem.textContent = user.email;
   }
 
-  // 2. Logout listener
-  document.getElementById("logoutBtn").addEventListener("click", async () => {
-    await supabase.auth.signOut();
-    window.location.href = "index.html";
-  });
+  // 2. Reveal Admin Portal Button if Admin
+  const adminPortalLink = document.getElementById("adminPortalLink");
+  if (adminPortalLink && ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+    adminPortalLink.classList.remove("hidden");
+  }
 
-  // 3. Load opportunities & existing applications
+  // 3. Logout
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "index.html";
+    });
+  }
+
+  // 4. Load Opportunities & Existing Applications
   await loadOpportunities(user);
 });
 
 async function loadOpportunities(user) {
   const container = document.getElementById("opportunitiesList");
-  
-  // Fetch opportunities
+  if (!container || !supabase) return;
+
   const { data: opportunities, error: oppsError } = await supabase
     .from("opportunities")
     .select("*")
     .order("created_at", { ascending: false });
 
-  // Fetch student's existing applications
-  const { data: applications, error: appsError } = await supabase
+  const { data: applications } = await supabase
     .from("applications")
     .select("opportunity_id")
     .eq("user_id", user.id);
 
   if (oppsError) {
-    container.innerHTML = `<p class="message error">Could not load opportunities.</p>`;
+    container.innerHTML = `<p class="message error">Could not load opportunities: ${oppsError.message}</p>`;
     return;
   }
 
@@ -86,9 +100,15 @@ async function loadOpportunities(user) {
   }).join("");
 }
 
-// Global apply action
+// Global Apply Function
 window.applyOpportunity = async function (opportunityId) {
+  if (!supabase) return;
+
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
 
   const { error } = await supabase.from("applications").insert([
     {
@@ -101,17 +121,20 @@ window.applyOpportunity = async function (opportunityId) {
   const statusMsg = document.getElementById("statusMessage");
 
   if (error) {
-    statusMsg.className = "message error";
-    statusMsg.textContent = "Application failed: " + error.message;
-    statusMsg.classList.remove("hidden");
+    if (statusMsg) {
+      statusMsg.className = "message error";
+      statusMsg.textContent = "Application failed: " + error.message;
+      statusMsg.classList.remove("hidden");
+    }
     return;
   }
 
-  statusMsg.className = "message success";
-  statusMsg.textContent = "Application submitted successfully!";
-  statusMsg.classList.remove("hidden");
+  if (statusMsg) {
+    statusMsg.className = "message success";
+    statusMsg.textContent = "Application submitted successfully!";
+    statusMsg.classList.remove("hidden");
+  }
 
-  // Update card button state dynamically
   const cardAction = document.querySelector(`#card-${opportunityId} .card-action`);
   if (cardAction) {
     cardAction.innerHTML = `<button class="btn btn-applied" disabled>Applied</button>`;

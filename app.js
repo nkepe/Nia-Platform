@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // --- DOM Elements ---
   const openModalBtn = document.getElementById("openModalBtn");
   const closeModalBtn = document.getElementById("closeModalBtn");
   const authModal = document.getElementById("authModal");
@@ -10,7 +9,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const signUpForm = document.getElementById("signUpForm");
   const authMessage = document.getElementById("authMessage");
 
-  // --- Helper Functions ---
   function showMessage(text, isError = false) {
     if (!authMessage) return;
     authMessage.textContent = text;
@@ -24,7 +22,6 @@ document.addEventListener("DOMContentLoaded", () => {
     authMessage.className = "message hidden";
   }
 
-  // --- Modal Open/Close Controls ---
   function openModal() {
     if (authModal) {
       authModal.classList.remove("hidden");
@@ -39,22 +36,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  if (openModalBtn) {
-    openModalBtn.addEventListener("click", openModal);
-  }
+  if (openModalBtn) openModalBtn.addEventListener("click", openModal);
+  if (closeModalBtn) closeModalBtn.addEventListener("click", closeModal);
 
-  if (closeModalBtn) {
-    closeModalBtn.addEventListener("click", closeModal);
-  }
-
-  // Close when clicking overlay backdrop
   window.addEventListener("click", (e) => {
-    if (e.target === authModal) {
-      closeModal();
-    }
+    if (e.target === authModal) closeModal();
   });
 
-  // --- Tab Switching ---
   if (tabSignIn && tabSignUp && signInForm && signUpForm) {
     tabSignIn.addEventListener("click", () => {
       tabSignIn.classList.add("active");
@@ -77,28 +65,47 @@ document.addEventListener("DOMContentLoaded", () => {
   const SUPABASE_ANON_KEY = "sb_publishable_wI8kuJuKQaH2-JO63Og5wA_LjoiHuJ4";
 
   let supabase = null;
+  if (window.supabase) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
 
-  const isConfigured = 
-    SUPABASE_URL !== "https://ypaogamdapbvuzwphngh.supabase.co" && 
-    SUPABASE_ANON_KEY !== "sb_publishable_wI8kuJuKQaH2-JO63Og5wA_LjoiHuJ4" &&
-    SUPABASE_URL.startsWith("https://");
+  const ADMIN_EMAILS = [
+    "davidkasimilu71@gmail.com",
+    "nkepedavid@gmail.com"
+  ];
 
-  if (window.supabase && isConfigured) {
+  async function routeUser(user) {
+    const email = user.email ? user.email.toLowerCase() : "";
+    if (ADMIN_EMAILS.includes(email)) {
+      window.location.href = "admin.html";
+      return;
+    }
+
     try {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    } catch (err) {
-      console.error("Supabase failed to initialize:", err);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile && profile.role === "admin") {
+        window.location.href = "admin.html";
+      } else {
+        window.location.href = "dashboard.html";
+      }
+    } catch {
+      window.location.href = "dashboard.html";
     }
   }
 
-  // --- Sign In Handler ---
+  // --- Sign In ---
   if (signInForm) {
     signInForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       clearMessage();
 
       if (!supabase) {
-        showMessage("Enter valid Supabase URL & Key in app.js", true);
+        showMessage("Supabase client is not loaded.", true);
         return;
       }
 
@@ -116,21 +123,23 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        window.location.href = "dashboard.html";
+        if (data?.user) {
+          await routeUser(data.user);
+        }
       } catch (err) {
         showMessage(err.message || "An unexpected error occurred", true);
       }
     });
   }
 
-  // --- Sign Up Handler ---
+  // --- Sign Up ---
   if (signUpForm) {
     signUpForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       clearMessage();
 
       if (!supabase) {
-        showMessage("Enter valid Supabase URL & Key in app.js", true);
+        showMessage("Supabase client is not loaded.", true);
         return;
       }
 
@@ -148,10 +157,10 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        if (data.session) {
-          window.location.href = "dashboard.html";
+        if (data?.session && data?.user) {
+          await routeUser(data.user);
         } else {
-          showMessage("Account created! Check your email to confirm.", false);
+          showMessage("Account registered! Please sign in.", false);
         }
       } catch (err) {
         showMessage(err.message || "An unexpected error occurred", true);
