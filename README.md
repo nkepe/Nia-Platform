@@ -3,7 +3,6 @@ Web based platform for graduates to source entry level job roles, internship opp
 
 Tech stack-
 Frontend: html, .css, .js
-
 Backend: database:Supabase
 
 Key features-
