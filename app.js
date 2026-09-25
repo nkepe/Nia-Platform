@@ -65,7 +65,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const SUPABASE_URL = "https://ypaogamdapbvuzwphngh.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_wI8kuJuKQaH2-JO63Og5wA_LjoiHuJ4";
 
-  // Renamed to avoid shadowing window.supabase
   const supabaseClient = window.supabase
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;

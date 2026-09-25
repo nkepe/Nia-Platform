@@ -114,7 +114,7 @@ body {
   margin: 0;
 }
 
-/* Metadata Row (Badges / Tags) */
+/* Metadata */
 .card-meta {
   display: flex;
   flex-wrap: wrap;
@@ -129,7 +129,6 @@ body {
   align-items: center;
 }
 
-/* Hide bullet separators and style as chip badges */
 .card-meta span:nth-child(2),
 .card-meta span:nth-child(4) {
   display: none;
@@ -163,7 +162,7 @@ body {
   margin-top: 0.4rem;
 }
 
-/* Actions Section */
+/* Section */
 .card-action {
   display: flex;
   justify-content: flex-end;
@@ -198,7 +197,7 @@ body {
   cursor: not-allowed;
 }
 
-/* Desktop Expansion: side-by-side layout on larger screens */
+/* Desktop Expansion */
 @media (min-width: 600px) {
   .card {
     flex-direction: row;
@@ -218,7 +217,7 @@ body {
 .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: #334155; text-decoration: none; }
 .btn-applied { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; cursor: not-allowed; }
 
-/* Admin Form Box */
+/* Admin Form */
 .form-box {
   background: #fff;
   border: 1px solid #e2e8f0;
@@ -258,7 +257,7 @@ body {
 
 .hidden { display: none !important; }
 
-/* Status Modal Styles */
+/* Status Modal */
     .status-modal-overlay {
       position: fixed;
       top: 0;

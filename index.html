@@ -5,36 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nia - Opportunity Portal</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- Supabase JS Client via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-  <!-- Landing / Hero Section -->
   <main class="landing">
     <div class="brand">
-      <!-- If you have a logo file: <img src="assets/logo.png" alt="Nia Logo" class="logo" /> -->
       <h1>Nia</h1>
       <p>Connecting graduates to opportunities.</p>
       <button id="openModalBtn" class="btn btn-primary">Get Started</button>
     </div>
   </main>
 
-  <!-- Auth Modal -->
   <div id="authModal" class="modal-overlay hidden">
     <div class="modal">
       <button id="closeModalBtn" class="close-btn">&times;</button>
 
-      <!-- Tabs -->
       <div class="tabs">
         <button id="tabSignIn" class="tab-btn active">Sign In</button>
         <button id="tabSignUp" class="tab-btn">Sign Up</button>
       </div>
 
-      <!-- Feedback / Error Message -->
       <div id="authMessage" class="message hidden"></div>
 
-      <!-- Sign In Form -->
       <form id="signInForm" class="auth-form">
         <div class="form-group">
           <label for="signinEmail">Email</label>
@@ -47,7 +40,6 @@
         <button type="submit" class="btn btn-submit">Sign In</button>
       </form>
 
-      <!-- Sign Up Form (hidden by default) -->
       <form id="signUpForm" class="auth-form hidden">
         <div class="form-group">
           <label for="signupEmail">Email</label>

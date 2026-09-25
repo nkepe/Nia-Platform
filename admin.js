@@ -1,7 +1,6 @@
 const SUPABASE_URL = "https://ypaogamdapbvuzwphngh.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_wI8kuJuKQaH2-JO63Og5wA_LjoiHuJ4";
 
-// Avoid name collision with window.supabase from the CDN script
 const supabaseClient = window.supabase
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
@@ -48,7 +47,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // 1. Verify User and Admin Status
+  // 1. Verify User and Admin
   const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
   if (sessionError || !session) {
