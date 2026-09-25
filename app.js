@@ -1,3 +1,4 @@
+
 document.addEventListener("DOMContentLoaded", () => {
   const openModalBtn = document.getElementById("openModalBtn");
   const closeModalBtn = document.getElementById("closeModalBtn");
@@ -64,10 +65,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const SUPABASE_URL = "https://ypaogamdapbvuzwphngh.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_wI8kuJuKQaH2-JO63Og5wA_LjoiHuJ4";
 
-  let supabase = null;
-  if (window.supabase) {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  }
+  // Renamed to avoid shadowing window.supabase
+  const supabaseClient = window.supabase
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
 
   const ADMIN_EMAILS = [
     "davidkasimilu71@gmail.com",
@@ -82,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const { data: profile } = await supabase
+      const { data: profile } = await supabaseClient
         .from("profiles")
         .select("role")
         .eq("id", user.id)
@@ -104,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       clearMessage();
 
-      if (!supabase) {
+      if (!supabaseClient) {
         showMessage("Supabase client is not loaded.", true);
         return;
       }
@@ -113,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const password = document.getElementById("signinPassword").value;
 
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
           email,
           password,
         });
@@ -138,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       clearMessage();
 
-      if (!supabase) {
+      if (!supabaseClient) {
         showMessage("Supabase client is not loaded.", true);
         return;
       }
@@ -147,7 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const password = document.getElementById("signupPassword").value;
 
       try {
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await supabaseClient.auth.signUp({
           email,
           password,
         });

@@ -72,59 +72,145 @@ body {
   color: #64748b;
 }
 
-.cards-grid {
+/* Container Spacing */
+#opportunitiesList {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  max-width: 680px;
+  margin: 1.5rem auto;
+  padding: 0 1rem;
 }
 
+/* Base Card Styling */
 .card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 1.5rem;
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  align-items: flex-start;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 1.25rem;
+  gap: 1rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+/* Card Content */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .card-body h3 {
-  color: #0f172a;
   font-size: 1.2rem;
-  margin-bottom: 0.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
 }
 
+/* Metadata Row (Badges / Tags) */
 .card-meta {
-  color: #64748b;
-  font-size: 0.85rem;
-  margin-bottom: 0.75rem;
   display: flex;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  color: #475569;
 }
 
-.card-desc {
+.card-meta span {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Hide bullet separators and style as chip badges */
+.card-meta span:nth-child(2),
+.card-meta span:nth-child(4) {
+  display: none;
+}
+
+.card-meta span strong {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.card-meta span:nth-child(3) {
+  background: #f1f5f9;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
   color: #334155;
-  font-size: 0.95rem;
-  line-height: 1.4;
 }
 
+.card-meta span:nth-child(5) {
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* Opportunity Description */
+.card-desc {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #64748b;
+  margin-top: 0.4rem;
+}
+
+/* Actions Section */
 .card-action {
-  margin-left: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 0.85rem;
 }
 
+/* Buttons */
 .btn {
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.6rem 1.4rem;
+  border-radius: 8px;
   cursor: pointer;
   border: none;
-  border-radius: 6px;
-  padding: 0.6rem 1.1rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: opacity 0.2s ease;
+  transition: all 0.2s ease;
 }
 
-.btn:hover {
-  opacity: 0.9;
+.btn-primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-applied {
+  background: #e2e8f0;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+/* Desktop Expansion: side-by-side layout on larger screens */
+@media (min-width: 600px) {
+  .card {
+    flex-direction: row;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .card-action {
+    border-top: none;
+    padding-top: 0;
+    flex-shrink: 0;
+  }
 }
 
 .btn-primary { background: #2563eb; color: #fff; }
@@ -171,3 +257,46 @@ body {
 .message.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
 
 .hidden { display: none !important; }
+
+/* Status Modal Styles */
+    .status-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 1rem;
+    }
+    .status-modal-box {
+      background: #ffffff;
+      color: #1e293b;
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    }
+    .status-modal-icon {
+      font-size: 2.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .status-modal-box h3 {
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+      font-size: 1.35rem;
+    }
+    .status-modal-box p {
+      font-size: 0.95rem;
+      color: #64748b;
+      margin-bottom: 1.5rem;
+      word-break: break-word;
+    }
+    .hidden {
+      display: none !important;
+    }

@@ -1,10 +1,10 @@
 const SUPABASE_URL = "https://ypaogamdapbvuzwphngh.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_wI8kuJuKQaH2-JO63Og5wA_LjoiHuJ4";
 
-let supabase = null;
-if (window.supabase) {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
+// Avoid name collision with window.supabase from the CDN script
+const supabaseClient = window.supabase
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
 
 const ADMIN_EMAILS = [
   "davidkasimilu71@gmail.com",
@@ -43,15 +43,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (e.target === statusModal) statusModal.classList.add("hidden");
   });
 
-  if (!supabase) {
+  if (!supabaseClient) {
     alert("Supabase failed to load. Check your internet connection or script CDN tag.");
     return;
   }
 
   // 1. Verify User and Admin Status
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
-  if (!session) {
+  if (sessionError || !session) {
     window.location.href = "index.html";
     return;
   }
@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let isProfileAdmin = false;
   try {
-    const { data: profile } = await supabase
+    const { data: profile } = await supabaseClient
       .from("profiles")
       .select("role")
       .eq("id", session.user.id)
@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
-      await supabase.auth.signOut();
+      await supabaseClient.auth.signOut();
       window.location.href = "index.html";
     });
   }
@@ -115,23 +115,36 @@ document.addEventListener("DOMContentLoaded", async () => {
         submitBtn.textContent = "Publishing...";
       }
 
-      const { error } = await supabase
-        .from("opportunities")
-        .insert([{ title, company, location, type, description }]);
+      try {
+        const { error } = await supabaseClient
+          .from("opportunities")
+          .insert([
+            {
+              title,
+              company,
+              location,
+              type,
+              description
+            }
+          ]);
 
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Publish Opportunity";
+        if (error) {
+          console.error("Supabase insert error:", error);
+          showStatusModal(false, "Failed to Post", error.message);
+          return;
+        }
+
+        showStatusModal(true, "Published!", `Opportunity "${title}" is now live for students.`);
+        postJobForm.reset();
+      } catch (err) {
+        console.error("Submission exception:", err);
+        showStatusModal(false, "Error", err.message || "Failed to communicate with Supabase.");
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Publish Opportunity";
+        }
       }
-
-      if (error) {
-        console.error("Supabase insert error:", error);
-        showStatusModal(false, "Failed to Post", error.message);
-        return;
-      }
-
-      showStatusModal(true, "Published!", `Opportunity "${title}" is now live for students.`);
-      postJobForm.reset();
     });
   }
 });

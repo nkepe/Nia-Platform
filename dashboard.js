@@ -1,10 +1,10 @@
 const SUPABASE_URL = "https://ypaogamdapbvuzwphngh.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_wI8kuJuKQaH2-JO63Og5wA_LjoiHuJ4";
 
-let supabase = null;
-if (window.supabase) {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
+// Avoid name collision with window.supabase from the CDN script
+const supabaseClient = window.supabase
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
 
 const ADMIN_EMAILS = [
   "davidkasimilu71@gmail.com",
@@ -12,17 +12,22 @@ const ADMIN_EMAILS = [
 ];
 
 document.addEventListener("DOMContentLoaded", async () => {
-  if (!supabase) return;
+  if (!supabaseClient) {
+    console.error("Supabase client failed to initialize.");
+    return;
+  }
 
   // 1. Auth Guard
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
-  if (!session) {
+  if (sessionError || !session) {
     window.location.href = "index.html";
     return;
   }
 
   const user = session.user;
+  const userEmail = user.email ? user.email.toLowerCase() : "";
+
   const userEmailElem = document.getElementById("userEmail");
   if (userEmailElem) {
     userEmailElem.textContent = user.email;
@@ -30,7 +35,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // 2. Reveal Admin Portal Button if Admin
   const adminPortalLink = document.getElementById("adminPortalLink");
-  if (adminPortalLink && ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+  if (adminPortalLink && ADMIN_EMAILS.includes(userEmail)) {
     adminPortalLink.classList.remove("hidden");
   }
 
@@ -38,7 +43,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
-      await supabase.auth.signOut();
+      await supabaseClient.auth.signOut();
       window.location.href = "index.html";
     });
   }
@@ -49,14 +54,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function loadOpportunities(user) {
   const container = document.getElementById("opportunitiesList");
-  if (!container || !supabase) return;
+  if (!container || !supabaseClient) return;
 
-  const { data: opportunities, error: oppsError } = await supabase
+  const { data: opportunities, error: oppsError } = await supabaseClient
     .from("opportunities")
     .select("*")
     .order("created_at", { ascending: false });
 
-  const { data: applications } = await supabase
+  const { data: applications } = await supabaseClient
     .from("applications")
     .select("opportunity_id")
     .eq("user_id", user.id);
@@ -92,7 +97,7 @@ async function loadOpportunities(user) {
           ${
             hasApplied
               ? `<button class="btn btn-applied" disabled>Applied</button>`
-              : `<button class="btn btn-primary" onclick="applyOpportunity('${opp.id}')">Apply Now</button>`
+              : `<button class="btn btn-primary" onclick="applyOpportunity('${opp.id}')">Apply</button>`
           }
         </div>
       </div>
@@ -102,15 +107,15 @@ async function loadOpportunities(user) {
 
 // Global Apply Function
 window.applyOpportunity = async function (opportunityId) {
-  if (!supabase) return;
+  if (!supabaseClient) return;
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await supabaseClient.auth.getUser();
   if (!user) {
     window.location.href = "index.html";
     return;
   }
 
-  const { error } = await supabase.from("applications").insert([
+  const { error } = await supabaseClient.from("applications").insert([
     {
       opportunity_id: opportunityId,
       user_id: user.id,

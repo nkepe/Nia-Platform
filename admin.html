@@ -6,60 +6,14 @@
   <title>Nia - Admin Dashboard</title>
   <link rel="stylesheet" href="dashboard.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    /* Status Modal Styles */
-    .status-modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.65);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      padding: 1rem;
-    }
-    .status-modal-box {
-      background: #ffffff;
-      color: #1e293b;
-      padding: 2rem;
-      border-radius: 12px;
-      max-width: 420px;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
-    }
-    .status-modal-icon {
-      font-size: 2.75rem;
-      margin-bottom: 0.75rem;
-    }
-    .status-modal-box h3 {
-      margin-top: 0;
-      margin-bottom: 0.5rem;
-      font-size: 1.35rem;
-    }
-    .status-modal-box p {
-      font-size: 0.95rem;
-      color: #64748b;
-      margin-bottom: 1.5rem;
-      word-break: break-word;
-    }
-    .hidden {
-      display: none !important;
-    }
-  </style>
 </head>
 <body>
 
   <header class="navbar">
     <div class="nav-brand">
-      <h2>Nia</h2>
       <span class="badge badge-admin">Admin Portal</span>
     </div>
     <div class="nav-user">
-      <span id="userEmail">Loading...</span>
       <a href="dashboard.html" class="btn btn-outline">Student View</a>
       <button id="logoutBtn" class="btn btn-secondary">Sign Out</button>
     </div>
@@ -67,8 +21,7 @@
 
   <main class="container">
     <section class="dash-header">
-      <h1>Post New Opportunity</h1>
-      <p>Add attachment, internship, or entry-level roles for students.</p>
+      <h1>New Post</h1>
     </section>
 
     <div id="adminMessage" class="message hidden"></div>
