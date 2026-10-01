@@ -10,6 +10,11 @@ const ADMIN_EMAILS = [
   "nkepedavid@gmail.com"
 ];
 
+// In-memory cache for searching and sorting
+let allOpportunities = [];
+let allUsers = [];
+let currentSubView = "opps"; // 'opps' or 'users'
+
 function showStatusModal(isSuccess, title, message) {
   const modal = document.getElementById("statusModal");
   const modalIcon = document.getElementById("statusModalIcon");
@@ -24,7 +29,7 @@ function showStatusModal(isSuccess, title, message) {
   if (modalIcon) modalIcon.textContent = isSuccess ? "✅" : "⚠️";
   if (modalTitle) {
     modalTitle.textContent = title;
-    modalTitle.style.color = isSuccess ? "#16a34a" : "#dc2626";
+    modalTitle.style.color = isSuccess ? "#0f172a" : "#dc2626";
   }
   if (modalMsg) modalMsg.textContent = message;
 
@@ -32,7 +37,7 @@ function showStatusModal(isSuccess, title, message) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Modal close handlers
+  // Modal Dismiss Handlers
   const closeModalBtn = document.getElementById("closeStatusModalBtn");
   const statusModal = document.getElementById("statusModal");
   if (closeModalBtn && statusModal) {
@@ -40,16 +45,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   window.addEventListener("click", (e) => {
     if (e.target === statusModal) statusModal.classList.add("hidden");
+    const editModal = document.getElementById("editOppModal");
+    if (e.target === editModal) editModal.classList.add("hidden");
   });
 
   if (!supabaseClient) {
-    alert("Supabase failed to load. Check your internet connection or script CDN tag.");
+    alert("Supabase failed to initialize.");
     return;
   }
 
-  // 1. Verify User and Admin
+  // 1. Verify User and Admin Privileges
   const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-
   if (sessionError || !session) {
     window.location.href = "index.html";
     return;
@@ -71,14 +77,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   if (!isDirectAdmin && !isProfileAdmin) {
-    alert("Access Denied: Admin credentials required.");
+    alert("Access Denied: Admin privileges required.");
     window.location.href = "dashboard.html";
     return;
-  }
-
-  const userEmailElem = document.getElementById("userEmail");
-  if (userEmailElem) {
-    userEmailElem.textContent = `${session.user.email} (Admin)`;
   }
 
   // 2. Sign Out
@@ -90,9 +91,61 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // 3. Form Submission
+  // 3. Main Navigation Tabs (Publish vs Control Center)
+  const tabPublish = document.getElementById("tabPublish");
+  const tabControl = document.getElementById("tabControl");
+  const publishSection = document.getElementById("publishSection");
+  const controlSection = document.getElementById("controlSection");
+
+  tabPublish.addEventListener("click", () => {
+    tabPublish.classList.add("active");
+    tabControl.classList.remove("active");
+    publishSection.classList.remove("hidden");
+    controlSection.classList.add("hidden");
+  });
+
+  tabControl.addEventListener("click", () => {
+    tabControl.classList.add("active");
+    tabPublish.classList.remove("active");
+    controlSection.classList.remove("hidden");
+    publishSection.classList.add("hidden");
+    loadAdminData();
+  });
+
+  // 4. Sub-tabs (Opportunities vs Users)
+  const subTabOpps = document.getElementById("subTabOpps");
+  const subTabUsers = document.getElementById("subTabUsers");
+  const oppsView = document.getElementById("oppsControlView");
+  const usersView = document.getElementById("usersControlView");
+
+  subTabOpps.addEventListener("click", () => {
+    currentSubView = "opps";
+    subTabOpps.classList.add("active");
+    subTabUsers.classList.remove("active");
+    oppsView.classList.remove("hidden");
+    usersView.classList.add("hidden");
+    applyFilterAndSort();
+  });
+
+  subTabUsers.addEventListener("click", () => {
+    currentSubView = "users";
+    subTabUsers.classList.add("active");
+    subTabOpps.classList.remove("active");
+    usersView.classList.remove("hidden");
+    oppsView.classList.add("hidden");
+    applyFilterAndSort();
+  });
+
+  // 5. Search & Sort Listeners
+  const searchInput = document.getElementById("adminSearchInput");
+  const sortSelect = document.getElementById("adminSortSelect");
+
+  if (searchInput) searchInput.addEventListener("input", applyFilterAndSort);
+  if (sortSelect) sortSelect.addEventListener("change", applyFilterAndSort);
+
+  // 6. Form Submission (Publish Opportunity)
   const postJobForm = document.getElementById("postJobForm");
-  const submitBtn = document.getElementById("submitBtn") || postJobForm?.querySelector("button[type='submit']");
+  const submitBtn = document.getElementById("submitBtn");
 
   if (postJobForm) {
     postJobForm.addEventListener("submit", async (e) => {
@@ -117,27 +170,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       try {
         const { error } = await supabaseClient
           .from("opportunities")
-          .insert([
-            {
-              title,
-              company,
-              location,
-              type,
-              description
-            }
-          ]);
+          .insert([{ title, company, location, type, description }]);
 
         if (error) {
-          console.error("Supabase insert error:", error);
           showStatusModal(false, "Failed to Post", error.message);
           return;
         }
 
-        showStatusModal(true, "Published!", `Opportunity "${title}" is now live for students.`);
+        showStatusModal(true, "Published!", `Opportunity "${title}" is now live.`);
         postJobForm.reset();
       } catch (err) {
-        console.error("Submission exception:", err);
-        showStatusModal(false, "Error", err.message || "Failed to communicate with Supabase.");
+        showStatusModal(false, "Error", err.message || "Failed to communicate with database.");
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
@@ -146,4 +189,251 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
   }
+
+  // 7. Edit Opportunity Modal Handlers
+  setupEditModal();
 });
+
+// Fetch all listings and profiles
+async function loadAdminData() {
+  const oppsTbody = document.getElementById("oppsTableBody");
+  const usersTbody = document.getElementById("usersTableBody");
+
+  if (oppsTbody) oppsTbody.innerHTML = `<tr><td colspan="5" class="loading-text">Loading opportunities...</td></tr>`;
+  if (usersTbody) usersTbody.innerHTML = `<tr><td colspan="5" class="loading-text">Loading users...</td></tr>`;
+
+  try {
+    const [oppsRes, usersRes] = await Promise.all([
+      supabaseClient.from("opportunities").select("*").order("created_at", { ascending: false }),
+      supabaseClient.from("profiles").select("*")
+    ]);
+
+    allOpportunities = oppsRes.data || [];
+    allUsers = usersRes.data || [];
+
+    applyFilterAndSort();
+  } catch (err) {
+    console.error("Data load failed:", err);
+  }
+}
+
+// Search and Sorting 
+function applyFilterAndSort() {
+  const query = (document.getElementById("adminSearchInput")?.value || "").toLowerCase().trim();
+  const sortMode = document.getElementById("adminSortSelect")?.value || "newest";
+
+  if (currentSubView === "opps") {
+    let filtered = allOpportunities.filter(o => 
+      (o.title && o.title.toLowerCase().includes(query)) ||
+      (o.company && o.company.toLowerCase().includes(query)) ||
+      (o.location && o.location.toLowerCase().includes(query)) ||
+      (o.type && o.type.toLowerCase().includes(query))
+    );
+
+    filtered.sort((a, b) => {
+      if (sortMode === "newest") return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      if (sortMode === "oldest") return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+      if (sortMode === "az") return (a.title || "").localeCompare(b.title || "");
+      return 0;
+    });
+
+    renderOpportunitiesTable(filtered);
+  } else {
+    let filtered = allUsers.filter(u => 
+      (u.email && u.email.toLowerCase().includes(query)) ||
+      (u.role && u.role.toLowerCase().includes(query)) ||
+      (u.status && u.status.toLowerCase().includes(query))
+    );
+
+    filtered.sort((a, b) => {
+      if (sortMode === "newest") return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      if (sortMode === "oldest") return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+      if (sortMode === "az") return (a.email || "").localeCompare(b.email || "");
+      return 0;
+    });
+
+    renderUsersTable(filtered);
+  }
+}
+
+function renderOpportunitiesTable(list) {
+  const tbody = document.getElementById("oppsTableBody");
+  if (!tbody) return;
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="loading-text">No opportunities found matching your criteria.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(opp => `
+    <tr>
+      <td><strong>${opp.title}</strong></td>
+      <td>${opp.company}</td>
+      <td>${opp.type}</td>
+      <td>${opp.location}</td>
+      <td>
+        <div class="table-actions">
+          <button class="action-btn edit-btn" title="Edit" onclick="openEditModal('${opp.id}')">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <button class="action-btn delete-btn" title="Delete" onclick="deleteOpportunity('${opp.id}', '${opp.title.replace(/'/g, "\\'")}')">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function renderUsersTable(list) {
+  const tbody = document.getElementById("usersTableBody");
+  if (!tbody) return;
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="loading-text">No users found matching your criteria.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(user => {
+    const isBanned = user.status === "banned";
+    const dateFormatted = user.created_at ? new Date(user.created_at).toLocaleDateString() : "N/A";
+
+    return `
+      <tr>
+        <td><strong>${user.email || "No email"}</strong></td>
+        <td>${user.role || "student"}</td>
+        <td>
+          <span class="status-chip ${isBanned ? 'banned' : 'active'}">
+            ${isBanned ? "Banned" : "Active"}
+          </span>
+        </td>
+        <td>${dateFormatted}</td>
+        <td>
+          <div class="table-actions">
+            <button class="action-btn ${isBanned ? 'unban-btn' : 'ban-btn'}" 
+              title="${isBanned ? 'Unban User' : 'Ban User'}" 
+              onclick="toggleBanUser('${user.id}', ${!isBanned})">
+              <i class="fa-solid ${isBanned ? 'fa-check' : 'fa-ban'}"></i>
+            </button>
+            <button class="action-btn delete-btn" title="Delete User Record" onclick="deleteUser('${user.id}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+// Opportunity Delete
+window.deleteOpportunity = async function(id, title) {
+  if (!confirm(`Are you sure you want to delete the opportunity "${title}"?`)) return;
+
+  const { error } = await supabaseClient.from("opportunities").delete().eq("id", id);
+  if (error) {
+    showStatusModal(false, "Delete Failed", error.message);
+    return;
+  }
+
+  allOpportunities = allOpportunities.filter(o => o.id !== id);
+  applyFilterAndSort();
+  showStatusModal(true, "Deleted", `"${title}" has been removed.`);
+};
+
+// User Ban and Unban Toggle
+window.toggleBanUser = async function(userId, setBanned) {
+  const actionText = setBanned ? "ban" : "unban";
+  if (!confirm(`Are you sure you want to ${actionText} this user?`)) return;
+
+  const newStatus = setBanned ? "banned" : "active";
+  const { error } = await supabaseClient
+    .from("profiles")
+    .update({ status: newStatus })
+    .eq("id", userId);
+
+  if (error) {
+    showStatusModal(false, "Action Failed", error.message);
+    return;
+  }
+
+  const target = allUsers.find(u => u.id === userId);
+  if (target) target.status = newStatus;
+  applyFilterAndSort();
+  showStatusModal(true, "Updated", `User status changed to ${newStatus}.`);
+};
+
+// User Profile Delete
+window.deleteUser = async function(userId) {
+  if (!confirm("Are you sure you want to delete this user record from the database? This cannot be undone.")) return;
+
+  const { error } = await supabaseClient.from("profiles").delete().eq("id", userId);
+  if (error) {
+    showStatusModal(false, "Delete Failed", error.message);
+    return;
+  }
+
+  allUsers = allUsers.filter(u => u.id !== userId);
+  applyFilterAndSort();
+  showStatusModal(true, "User Removed", "User profile has been deleted.");
+};
+
+// Modal Edit Handlers
+function setupEditModal() {
+  const modal = document.getElementById("editOppModal");
+  const closeBtn = document.getElementById("closeEditModal");
+  const cancelBtn = document.getElementById("cancelEditBtn");
+  const form = document.getElementById("editOppForm");
+
+  const hide = () => modal.classList.add("hidden");
+  if (closeBtn) closeBtn.addEventListener("click", hide);
+  if (cancelBtn) cancelBtn.addEventListener("click", hide);
+
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("editOppId").value;
+      const title = document.getElementById("editJobTitle").value.trim();
+      const company = document.getElementById("editCompanyName").value.trim();
+      const location = document.getElementById("editJobLocation").value.trim();
+      const type = document.getElementById("editJobType").value;
+      const description = document.getElementById("editJobDesc").value.trim();
+
+      const { error } = await supabaseClient
+        .from("opportunities")
+        .update({ title, company, location, type, description })
+        .eq("id", id);
+
+      if (error) {
+        showStatusModal(false, "Update Failed", error.message);
+        return;
+      }
+
+      const opp = allOpportunities.find(o => o.id === id);
+      if (opp) {
+        opp.title = title;
+        opp.company = company;
+        opp.location = location;
+        opp.type = type;
+        opp.description = description;
+      }
+
+      hide();
+      applyFilterAndSort();
+      showStatusModal(true, "Updated", `Opportunity "${title}" updated successfully.`);
+    });
+  }
+}
+
+window.openEditModal = function(id) {
+  const opp = allOpportunities.find(o => o.id === id);
+  if (!opp) return;
+
+  document.getElementById("editOppId").value = opp.id;
+  document.getElementById("editJobTitle").value = opp.title || "";
+  document.getElementById("editCompanyName").value = opp.company || "";
+  document.getElementById("editJobLocation").value = opp.location || "";
+  document.getElementById("editJobType").value = opp.type || "Industrial Attachment";
+  document.getElementById("editJobDesc").value = opp.description || "";
+
+  document.getElementById("editOppModal").classList.remove("hidden");
+};

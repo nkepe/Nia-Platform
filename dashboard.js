@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // 1. Authentication 
+  // 1. Authentication Check
   const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
   if (sessionError || !session) {
@@ -27,18 +27,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   const user = session.user;
   const userEmail = user.email ? user.email.toLowerCase() : "";
 
-  const userEmailElem = document.getElementById("userEmail");
-  if (userEmailElem) {
-    userEmailElem.textContent = user.email;
-  }
-
-  // 2. Reveal Admin Portal Button if Admin
+  // 2. Reveal Admin Portal Btn if Admin
   const adminPortalLink = document.getElementById("adminPortalLink");
   if (adminPortalLink && ADMIN_EMAILS.includes(userEmail)) {
     adminPortalLink.classList.remove("hidden");
   }
 
-  // 3. Logout
+  // 3. First-Time User Welcome Modal Check
+  checkFirstTimeWelcome(user);
+
+  // 4. Logout (Top-Right Icon)
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
@@ -47,9 +45,54 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // 4. Load Opportunities & Applications
+  // 5. Load Opportunities & Applications
   await loadOpportunities(user);
 });
+
+// Welcome Modal Handler
+function checkFirstTimeWelcome(user) {
+  const welcomeKey = `nia_welcomed_${user.id}`;
+  const alreadyWelcomed = localStorage.getItem(welcomeKey);
+
+  if (!alreadyWelcomed) {
+    const welcomeModal = document.getElementById("welcomeModal");
+    const welcomeHeading = document.getElementById("welcomeHeading");
+    const closeBtn = document.getElementById("closeWelcomeModal");
+    const dismissBtn = document.getElementById("dismissWelcomeBtn");
+
+    // Extract first name (from user metadata or email prefix)
+    let firstName = "";
+    if (user.user_metadata?.first_name) {
+      firstName = user.user_metadata.first_name;
+    } else if (user.user_metadata?.full_name) {
+      firstName = user.user_metadata.full_name.split(" ")[0];
+    } else if (user.email) {
+      const prefix = user.email.split("@")[0].replace(/[^a-zA-Z]/g, " ").trim();
+      firstName = prefix.split(" ")[0] || "User";
+      firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+    }
+
+    if (welcomeHeading) {
+      welcomeHeading.textContent = `Welcome, ${firstName}!`;
+    }
+
+    if (welcomeModal) {
+      welcomeModal.classList.remove("hidden");
+
+      const hideModal = () => {
+        welcomeModal.classList.add("hidden");
+        localStorage.setItem(welcomeKey, "true");
+      };
+
+      if (closeBtn) closeBtn.addEventListener("click", hideModal);
+      if (dismissBtn) dismissBtn.addEventListener("click", hideModal);
+
+      welcomeModal.addEventListener("click", (e) => {
+        if (e.target === welcomeModal) hideModal();
+      });
+    }
+  }
+}
 
 async function loadOpportunities(user) {
   const container = document.getElementById("opportunitiesList");

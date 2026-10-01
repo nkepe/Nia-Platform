@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nia - Opportunity Portal</title>
+  <link rel="icon" type="image/x-icon" href="favicon/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="192x192" href="assets/favicon/android-chrome-192x192.png" />
+  <link rel="apple-touch-icon" sizes="512x512" href="assets/favicon/android-chrome-512x512.png" />
+
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -11,15 +17,17 @@
 
   <main class="landing">
     <div class="brand">
-      <h1>Nia</h1>
-      <p>Connecting graduates to opportunities.</p>
-      <button id="openModalBtn" class="btn btn-primary">Get Started</button>
+      <div class="brand-logo-circle">
+        <img src="assets/images/logo1.png" alt="Nia Logo" class="brand-logo" />
+      </div>
+      <p class="tagline">Information You Can Trust.</p>
+      <button id="openModalBtn" class="btn btn-ghost">Get Started</button>
     </div>
   </main>
 
-  <div id="authModal" class="modal-overlay hidden">
+  <div id="authModal" class="modal-overlay hidden" aria-modal="true" role="dialog">
     <div class="modal">
-      <button id="closeModalBtn" class="close-btn">&times;</button>
+      <button id="closeModalBtn" class="close-btn" aria-label="Close modal">&times;</button>
 
       <div class="tabs">
         <button id="tabSignIn" class="tab-btn active">Sign In</button>
@@ -31,11 +39,11 @@
       <form id="signInForm" class="auth-form">
         <div class="form-group">
           <label for="signinEmail">Email</label>
-          <input type="email" id="signinEmail" required placeholder="you@example.com" />
+          <input type="email" id="signinEmail" required placeholder="Enter your email" autocomplete="email" />
         </div>
         <div class="form-group">
           <label for="signinPassword">Password</label>
-          <input type="password" id="signinPassword" required placeholder="••••••••" />
+          <input type="password" id="signinPassword" required placeholder="••••••••" autocomplete="current-password" />
         </div>
         <button type="submit" class="btn btn-submit">Sign In</button>
       </form>
@@ -43,11 +51,11 @@
       <form id="signUpForm" class="auth-form hidden">
         <div class="form-group">
           <label for="signupEmail">Email</label>
-          <input type="email" id="signupEmail" required placeholder="you@example.com" />
+          <input type="email" id="signupEmail" required placeholder="Enter a valid email address" autocomplete="email" />
         </div>
         <div class="form-group">
           <label for="signupPassword">Password</label>
-          <input type="password" id="signupPassword" minlength="6" required placeholder="At least 6 characters" />
+          <input type="password" id="signupPassword" minlength="6" required placeholder="At least 6 characters" autocomplete="new-password" />
         </div>
         <button type="submit" class="btn btn-submit">Create Account</button>
       </form>

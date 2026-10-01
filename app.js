@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", () => {
   const openModalBtn = document.getElementById("openModalBtn");
   const closeModalBtn = document.getElementById("closeModalBtn");

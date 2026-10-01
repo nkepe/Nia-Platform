@@ -1,4 +1,3 @@
--- 1. Create opportunities table
 CREATE TABLE IF NOT EXISTS public.opportunities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
@@ -9,7 +8,6 @@ CREATE TABLE IF NOT EXISTS public.opportunities (
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 2. Create applications table
 CREATE TABLE IF NOT EXISTS public.applications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     opportunity_id UUID REFERENCES public.opportunities(id) ON DELETE CASCADE NOT NULL,
@@ -19,38 +17,29 @@ CREATE TABLE IF NOT EXISTS public.applications (
     UNIQUE(opportunity_id, user_id)
 );
 
--- 3. Enable Row Level Security (RLS)
 ALTER TABLE public.opportunities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.applications ENABLE ROW LEVEL SECURITY;
 
--- 4. Policies for Opportunities
--- Everyone logged in can view opportunities
 CREATE POLICY "Allow authenticated read on opportunities" 
 ON public.opportunities FOR SELECT 
 TO authenticated 
 USING (true);
 
--- Only your admin email can insert opportunities
 CREATE POLICY "Allow admin insert on opportunities" 
 ON public.opportunities FOR INSERT 
 TO authenticated 
 WITH CHECK (auth.jwt() ->> 'email' = 'davidkasimilu71@gmail.com');
 
--- 5. Policies for Applications
--- Students can insert their own application
 CREATE POLICY "Allow user insert own application" 
 ON public.applications FOR INSERT 
 TO authenticated 
 WITH CHECK (auth.uid() = user_id);
 
--- Students can read their own applications
 CREATE POLICY "Allow user read own applications" 
 ON public.applications FOR SELECT 
 TO authenticated 
 USING (auth.uid() = user_id OR auth.jwt() ->> 'email' = 'davidkasimilu71@gmail.com');
 
--- 6. Helper to seed the Admin user (Optional: you can also sign up via the UI)
--- Ensure pgcrypto is available for password hashing
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 DO $$
