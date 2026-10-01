@@ -1,4 +1,6 @@
 # Nia-Platform
+![GitHub Release](https://img.shields.io/github/v/release/nkepe/Nia-Platform?color=0f172a&label=version)
+
 Web based platform for graduates to source entry level job roles, internship opportunities and attachments. 
 
 Tech stack-
