@@ -14,3 +14,7 @@ Apply for any opportunity
 Demo login credentials (Administrator)
 email: nkepedavid@gmail.com
 password: 1234567
+
+Demo login credentials (student)
+email: jemimawanyika3@gmail.com 
+password: 123456
