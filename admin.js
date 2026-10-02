@@ -330,6 +330,9 @@ function renderApplicationsTable(list) {
         </a>`
       : `<span style="font-size: 0.78rem; color: #94a3b8; font-style: italic;">Not attached</span>`;
 
+    // Ensure we pass the record's primary id if present, otherwise fallback to opportunity_id
+    const appIdentifier = app.id || app.opportunity_id;
+
     return `
       <tr>
         <td><strong>${app.user_email || "N/A"}</strong></td>
@@ -339,7 +342,7 @@ function renderApplicationsTable(list) {
         <td>${dateFormatted}</td>
         <td>
           <div class="table-actions">
-            <button class="action-btn delete-btn" title="Remove Application Record" onclick="deleteApplication('${app.id || app.opportunity_id}')">
+            <button class="action-btn delete-btn" title="Remove Application Record" onclick="deleteApplication('${appIdentifier}')">
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
@@ -405,21 +408,27 @@ window.deleteOpportunity = async function(id, title) {
   showStatusModal(true, "Deleted", `"${title}" has been removed.`);
 };
 
-// Delete Application
+// Delete Application (with exact key matching)
 window.deleteApplication = async function(appIdentifier) {
   if (!confirm("Are you sure you want to remove this application record?")) return;
 
-  const { error } = await supabaseClient
-    .from("applications")
-    .delete()
-    .match(appIdentifier.includes("-") ? { id: appIdentifier } : { opportunity_id: appIdentifier });
+  let query = supabaseClient.from("applications").delete();
+
+  // If the identifier contains a dash or is a UUID, attempt by primary key 'id', else 'opportunity_id'
+  if (appIdentifier.includes("-")) {
+    query = query.eq("id", appIdentifier);
+  } else {
+    query = query.eq("opportunity_id", appIdentifier);
+  }
+
+  const { error } = await query;
 
   if (error) {
     showStatusModal(false, "Delete Failed", error.message);
     return;
   }
 
-  allApplications = allApplications.filter(a => (a.id !== appIdentifier && a.opportunity_id !== appIdentifier));
+  allApplications = allApplications.filter(a => a.id !== appIdentifier && a.opportunity_id !== appIdentifier);
   applyFilterAndSort();
   showStatusModal(true, "Removed", "Application record has been cleared.");
 };
