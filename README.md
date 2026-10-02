@@ -1,22 +1,24 @@
 # Nia-Platform
-![GitHub Release](https://img.shields.io/github/v/release/nkepe/Nia-Platform?color=0f172a&label=version)
+![GitHub Release](https://img.shields.io/github/v/release/nkepe/Nia-Platform?color=10b981&label=version)
 
-Web based platform for graduates to source entry level job roles, internship opportunities and attachments. 
+Nia is an information web based platform designed for graduates looking for entry level job roles, internship offers and attachments opportunities. 
 
 Tech stack-
 Frontend: html, .css, .js
 Backend: database:Supabase
 
 Key features-
-User registration 
-Profile setup
-Browse for available posted opportunities 
-Apply for any opportunity 
 
-Demo login credentials (Administrator)
+User registration and authentication.
+Profile setup and user information update.
+Opportunity feed to students.
+Application of opportunities. 
+Admin control, user management and post management.
+
+Demo login credentials (Admin/student)
+
 email: nkepedavid@gmail.com
 password: 1234567
 
-Demo login credentials (student)
 email: jemimawanyika3@gmail.com 
 password: 123456
