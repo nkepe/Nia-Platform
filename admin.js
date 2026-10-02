@@ -10,10 +10,11 @@ const ADMIN_EMAILS = [
   "nkepedavid@gmail.com"
 ];
 
-// In-memory cache for searching and sorting
+// In-memory data store
 let allOpportunities = [];
+let allApplications = [];
 let allUsers = [];
-let currentSubView = "opps"; // 'opps' or 'users'
+let currentSubView = "opps"; // 'opps', 'apps', or 'users'
 
 function showStatusModal(isSuccess, title, message) {
   const modal = document.getElementById("statusModal");
@@ -112,29 +113,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     loadAdminData();
   });
 
-  // 4. Sub-tabs (Opportunities vs Users)
+  // 4. Sub-tabs (Opportunities vs Applications vs Users)
   const subTabOpps = document.getElementById("subTabOpps");
+  const subTabApps = document.getElementById("subTabApps");
   const subTabUsers = document.getElementById("subTabUsers");
   const oppsView = document.getElementById("oppsControlView");
+  const appsView = document.getElementById("appsControlView");
   const usersView = document.getElementById("usersControlView");
 
-  subTabOpps.addEventListener("click", () => {
-    currentSubView = "opps";
-    subTabOpps.classList.add("active");
-    subTabUsers.classList.remove("active");
-    oppsView.classList.remove("hidden");
-    usersView.classList.add("hidden");
-    applyFilterAndSort();
-  });
+  function switchSubTab(targetView, activeBtn) {
+    currentSubView = targetView;
+    [subTabOpps, subTabApps, subTabUsers].forEach(btn => btn.classList.remove("active"));
+    [oppsView, appsView, usersView].forEach(view => view.classList.add("hidden"));
 
-  subTabUsers.addEventListener("click", () => {
-    currentSubView = "users";
-    subTabUsers.classList.add("active");
-    subTabOpps.classList.remove("active");
-    usersView.classList.remove("hidden");
-    oppsView.classList.add("hidden");
+    activeBtn.classList.add("active");
+    if (targetView === "opps") oppsView.classList.remove("hidden");
+    if (targetView === "apps") appsView.classList.remove("hidden");
+    if (targetView === "users") usersView.classList.remove("hidden");
+
     applyFilterAndSort();
-  });
+  }
+
+  subTabOpps.addEventListener("click", () => switchSubTab("opps", subTabOpps));
+  subTabApps.addEventListener("click", () => switchSubTab("apps", subTabApps));
+  subTabUsers.addEventListener("click", () => switchSubTab("users", subTabUsers));
 
   // 5. Search & Sort Listeners
   const searchInput = document.getElementById("adminSearchInput");
@@ -190,26 +192,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // 7. Edit Opportunity Modal Handlers
   setupEditModal();
 });
 
-// Fetch all listings and profiles
+// Fetch all records across tables
 async function loadAdminData() {
   const oppsTbody = document.getElementById("oppsTableBody");
+  const appsTbody = document.getElementById("appsTableBody");
   const usersTbody = document.getElementById("usersTableBody");
 
   if (oppsTbody) oppsTbody.innerHTML = `<tr><td colspan="5" class="loading-text">Loading opportunities...</td></tr>`;
+  if (appsTbody) appsTbody.innerHTML = `<tr><td colspan="5" class="loading-text">Loading applications...</td></tr>`;
   if (usersTbody) usersTbody.innerHTML = `<tr><td colspan="5" class="loading-text">Loading users...</td></tr>`;
 
   try {
-    const [oppsRes, usersRes] = await Promise.all([
+    const [oppsRes, appsRes, usersRes] = await Promise.all([
       supabaseClient.from("opportunities").select("*").order("created_at", { ascending: false }),
+      supabaseClient.from("applications").select("*").order("created_at", { ascending: false }),
       supabaseClient.from("profiles").select("*")
     ]);
 
     allOpportunities = oppsRes.data || [];
     allUsers = usersRes.data || [];
+
+    // Map opportunities to applications for title & company display
+    const oppMap = new Map(allOpportunities.map(o => [o.id, o]));
+    allApplications = (appsRes.data || []).map(app => ({
+      ...app,
+      oppTitle: oppMap.get(app.opportunity_id)?.title || "Archived Role",
+      oppCompany: oppMap.get(app.opportunity_id)?.company || "N/A"
+    }));
 
     applyFilterAndSort();
   } catch (err) {
@@ -217,7 +229,7 @@ async function loadAdminData() {
   }
 }
 
-// Search and Sorting 
+// Search and Sorting Pipeline
 function applyFilterAndSort() {
   const query = (document.getElementById("adminSearchInput")?.value || "").toLowerCase().trim();
   const sortMode = document.getElementById("adminSortSelect")?.value || "newest";
@@ -238,6 +250,21 @@ function applyFilterAndSort() {
     });
 
     renderOpportunitiesTable(filtered);
+  } else if (currentSubView === "apps") {
+    let filtered = allApplications.filter(a =>
+      (a.user_email && a.user_email.toLowerCase().includes(query)) ||
+      (a.oppTitle && a.oppTitle.toLowerCase().includes(query)) ||
+      (a.oppCompany && a.oppCompany.toLowerCase().includes(query))
+    );
+
+    filtered.sort((a, b) => {
+      if (sortMode === "newest") return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      if (sortMode === "oldest") return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+      if (sortMode === "az") return (a.user_email || "").localeCompare(b.user_email || "");
+      return 0;
+    });
+
+    renderApplicationsTable(filtered);
   } else {
     let filtered = allUsers.filter(u => 
       (u.email && u.email.toLowerCase().includes(query)) ||
@@ -285,6 +312,35 @@ function renderOpportunitiesTable(list) {
   `).join("");
 }
 
+function renderApplicationsTable(list) {
+  const tbody = document.getElementById("appsTableBody");
+  if (!tbody) return;
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="loading-text">No applications found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(app => {
+    const dateFormatted = app.created_at ? new Date(app.created_at).toLocaleDateString() : "Recently";
+    return `
+      <tr>
+        <td><strong>${app.user_email || "N/A"}</strong></td>
+        <td>${app.oppTitle}</td>
+        <td>${app.oppCompany}</td>
+        <td>${dateFormatted}</td>
+        <td>
+          <div class="table-actions">
+            <button class="action-btn delete-btn" title="Remove Application Record" onclick="deleteApplication('${app.id || app.opportunity_id}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
 function renderUsersTable(list) {
   const tbody = document.getElementById("usersTableBody");
   if (!tbody) return;
@@ -325,7 +381,7 @@ function renderUsersTable(list) {
   }).join("");
 }
 
-// Opportunity Delete
+// Delete Opportunity
 window.deleteOpportunity = async function(id, title) {
   if (!confirm(`Are you sure you want to delete the opportunity "${title}"?`)) return;
 
@@ -340,7 +396,26 @@ window.deleteOpportunity = async function(id, title) {
   showStatusModal(true, "Deleted", `"${title}" has been removed.`);
 };
 
-// User Ban and Unban Toggle
+// Delete Application
+window.deleteApplication = async function(appIdentifier) {
+  if (!confirm("Are you sure you want to remove this application record?")) return;
+
+  const { error } = await supabaseClient
+    .from("applications")
+    .delete()
+    .match(appIdentifier.includes("-") ? { id: appIdentifier } : { opportunity_id: appIdentifier });
+
+  if (error) {
+    showStatusModal(false, "Delete Failed", error.message);
+    return;
+  }
+
+  allApplications = allApplications.filter(a => (a.id !== appIdentifier && a.opportunity_id !== appIdentifier));
+  applyFilterAndSort();
+  showStatusModal(true, "Removed", "Application record has been cleared.");
+};
+
+// User Ban/Unban Toggle
 window.toggleBanUser = async function(userId, setBanned) {
   const actionText = setBanned ? "ban" : "unban";
   if (!confirm(`Are you sure you want to ${actionText} this user?`)) return;
@@ -377,7 +452,7 @@ window.deleteUser = async function(userId) {
   showStatusModal(true, "User Removed", "User profile has been deleted.");
 };
 
-// Modal Edit Handlers
+// Edit Opportunity Setup
 function setupEditModal() {
   const modal = document.getElementById("editOppModal");
   const closeBtn = document.getElementById("closeEditModal");

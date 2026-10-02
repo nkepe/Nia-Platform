@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nia - Admin Portal</title>
-  <link rel="icon" type="assets/image/x-icon" href="favicon/favicon.ico" />
+  <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16x16.png" />
   <link rel="apple-touch-icon" sizes="192x192" href="assets/favicon/android-chrome-192x192.png" />
@@ -38,13 +38,15 @@
   </header>
 
   <main class="container">
+    <!-- Admin Navigation Tabs -->
     <div class="tabs admin-tabs">
       <button id="tabPublish" class="tab-btn active"><i class="fa-solid fa-pen-to-square"></i> Publish</button>
       <button id="tabControl" class="tab-btn"><i class="fa-solid fa-sliders"></i> Control Center</button>
     </div>
 
-    <section id="publishSection">      
-      <div class="form-box">
+    <!-- TAB 1: Publish Opportunity -->
+    <section id="publishSection">
+       <div class="form-box">
         <form id="postJobForm">
           <div class="form-group">
             <label for="jobTitle">Job Title</label>
@@ -81,11 +83,12 @@
       </div>
     </section>
 
-    <section id="controlSection" class="hidden">      
-      <!-- Controls Sub-toggle & Toolbar -->
+    <!-- TAB 2: Control Center -->
+    <section id="controlSection" class="hidden">
       <div class="control-toolbar">
         <div class="sub-tabs">
           <button id="subTabOpps" class="sub-tab-btn active"><i class="fa-solid fa-briefcase"></i> Opportunities</button>
+          <button id="subTabApps" class="sub-tab-btn"><i class="fa-solid fa-file-lines"></i> Applications</button>
           <button id="subTabUsers" class="sub-tab-btn"><i class="fa-solid fa-users"></i> Users</button>
         </div>
 
@@ -123,6 +126,24 @@
         </table>
       </div>
 
+      <!-- Applications Table -->
+      <div id="appsControlView" class="control-table-wrapper hidden">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Applicant Email</th>
+              <th>Opportunity Title</th>
+              <th>Company</th>
+              <th>Applied Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="appsTableBody">
+            <tr><td colspan="5" class="loading-text">Loading applications...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
       <!-- Users Table -->
       <div id="usersControlView" class="control-table-wrapper hidden">
         <table class="admin-table">
@@ -143,6 +164,7 @@
     </section>
   </main>
 
+  <!-- Edit Opportunity Modal -->
   <div id="editOppModal" class="status-modal-overlay hidden" aria-modal="true" role="dialog">
     <div class="status-modal-box edit-modal-box">
       <button id="closeEditModal" class="modal-close-btn">&times;</button>
