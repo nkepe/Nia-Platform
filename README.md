@@ -14,7 +14,6 @@
 - [System Architecture & Stack](#system-architecture--stack)
 - [Database Schema & Security (RLS)](#database-schema--security-rls)
 - [File & Storage Specifications](#file-storage-specifications)
-- [Getting Started & Local Setup](#getting-started--local-setup)
 - [Administrative Controls](#administrative-controls)
 - [Author & Academic Credits](#author--academic-credits)
 
@@ -91,3 +90,40 @@ Deletions execute via `ON DELETE CASCADE`:
    git clone [https://github.com/nkepe/Nia-Platform.git](https://github.com/nkepe/Nia-Platform.git)
    cd Nia-Platform
    
+---
+
+## Administrative Controls & Governance
+
+The platform implements a multi-tier authorization and administrative oversight framework designed to safeguard data integrity and moderate platform activity:
+
+### 1. Dual-Layer Privilege Verification
+Administrative access is enforced through both client-side route guards and database-level security policies:
+* **Identity Whitelisting:** Client routing checks verify active user emails against a secure list (`ADMIN_EMAILS`) alongside a database check on `profiles.role = 'admin'`.
+* **Dynamic Navigation Exposure:** Privileged navigation elements (e.g., direct routing to `admin.html`) remain hidden from standard student accounts and are only injected upon verified administrative authentication.
+* **Unauthorized Access Redirection:** Unprivileged users attempting direct URL manipulation to administrative pages are redirected to the student feed with session logging.
+
+### 2. Opportunity Lifecycle Management
+Administrators possess complete CRUD (Create, Read, Update, Delete) governance over job and attachment listings:
+* **Publishing Engine:** Direct intake form validating role title, hosting company, work arrangement (Attachment, Internship, Full-time, Part-time), geographic location, and comprehensive job requirements.
+* **In-Place Modification:** Modal-driven update interfaces allowing real-time edits to active job descriptions, requirements, and locations without record re-creation.
+* **Cascading Teardown:** Opportunity pruning utilizes relational foreign key cascades (`ON DELETE CASCADE`), automatically clearing obsolete applicant submissions linked to deleted opportunities.
+
+### 3. Application Review & Resume Auditing
+* **Centralized Intake Monitoring:** Consolidated table displaying applicant emails, targeted positions, hiring organizations, and submission timestamps.
+* **Direct Document Preview:** In-line integration with Supabase Storage enabling one-click opening and review of uploaded student CVs/Resumes in standard document formats (PDF/DOCX).
+* **Record Sanitization:** Selective deletion of individual applicant records with confirmation guards to prevent accidental data loss.
+
+### 4. Account Moderation & Suspension Lifecycle
+* **Soft Ban (Suspension):** Status toggling (`active` vs. `banned`) on student profiles. Banned accounts are intercepted during login and active sessions, immediately signed out, and presented with suspension advisories.
+* **Database-Enforced Restriction:** PostgreSQL Row Level Security (RLS) rules evaluate account status to prevent banned identifiers from querying listings or inserting application rows.
+* **Hard Purge (RPC Cascades):** Permanent user deletion utilizes an administrative PostgreSQL `SECURITY DEFINER` function (`delete_user_by_admin`). This completely eliminates the identity record from Supabase's internal authentication registry (`auth.users`), which automatically cascades to erase the public profile, storage bindings, and historical application submissions.
+
+---
+
+## Author & Academic Credits
+
+* **Lead Architect & Developer:** David Kasimilu Nkepe
+* **Institutional Affiliation:** Taita Taveta University (TTU)
+* **Academic Program:** Diploma in Information Technology
+* **Project Designation:** Academic Capstone Project Submission & Demonstration
+* **Repository:** [github.com/nkepe/Nia-Platform](https://github.com/nkepe/Nia-Platform)
