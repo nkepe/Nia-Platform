@@ -3,6 +3,8 @@
 
 Nia is an information web based platform designed for graduates looking for entry level job roles, internship offers and attachments opportunities. 
 
+🔗 https://nkepe.github.io/Nia-Platform/
+
 *Tech stack-*
 - Frontend: html, .css, .js
 - Backend: database:Supabase
