@@ -439,17 +439,27 @@ window.toggleBanUser = async function(userId, setBanned) {
 
 // User Profile Delete
 window.deleteUser = async function(userId) {
-  if (!confirm("Are you sure you want to delete this user record from the database? This cannot be undone.")) return;
+  if (!confirm("Are you sure you want to permanently delete this user and their account? This cannot be undone.")) return;
 
-  const { error } = await supabaseClient.from("profiles").delete().eq("id", userId);
-  if (error) {
-    showStatusModal(false, "Delete Failed", error.message);
-    return;
+  try {
+    const { error } = await supabaseClient.rpc("delete_user_by_admin", {
+      target_user_id: userId
+    });
+
+    if (error) {
+      showStatusModal(false, "Delete Failed", error.message);
+      return;
+    }
+
+    // Remove from in-memory cache and re-render
+    allUsers = allUsers.filter(u => u.id !== userId);
+    allApplications = allApplications.filter(a => a.user_id !== userId);
+    applyFilterAndSort();
+
+    showStatusModal(true, "User Removed", "User account and all associated data have been permanently deleted.");
+  } catch (err) {
+    showStatusModal(false, "Error", err.message || "Failed to communicate with database.");
   }
-
-  allUsers = allUsers.filter(u => u.id !== userId);
-  applyFilterAndSort();
-  showStatusModal(true, "User Removed", "User profile has been deleted.");
 };
 
 // Edit Opportunity Setup
