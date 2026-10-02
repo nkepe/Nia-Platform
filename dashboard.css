@@ -62,7 +62,6 @@ body {
   display: block;
 }
 
-/* Badges */
 .badge {
   padding: 0.25rem 0.6rem;
   border-radius: 6px;
@@ -76,7 +75,7 @@ body {
   color: #ffffff;
 }
 
-/* Layout & Container */
+/* Layout */
 .container {
   max-width: 820px;
   margin: 2rem auto;
@@ -87,8 +86,20 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.dash-header h1 {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
 
-/* Student Feed */
+.dash-header p {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+/* Feed Cards */
 #opportunitiesList {
   display: flex;
   flex-direction: column;
@@ -260,7 +271,7 @@ body {
   width: 100%;
 }
 
-/* Forms & Inputs */
+/* Forms */
 .form-box {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -305,7 +316,7 @@ body {
   box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
 }
 
-/* Feedback Message */
+/* Feedback Messages */
 .message {
   padding: 0.75rem 1rem;
   border-radius: 8px;
@@ -332,8 +343,7 @@ body {
   padding: 2rem 0;
 }
 
-/* Admin Nav Tabs */
-
+/* Admin Tabs & Toolbar */
 .tabs {
   display: flex;
   border-bottom: 1.5px solid #e2e8f0;
@@ -464,7 +474,7 @@ body {
   transition: border-color 0.15s ease;
 }
 
-/* Admin Tables & Actions */
+/* Tables & Actions */
 .control-table-wrapper {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -563,7 +573,7 @@ body {
   color: #dc2626;
 }
 
-/* Modals & Overlays */
+/* Modals */
 .status-modal-overlay {
   position: fixed;
   inset: 0;
@@ -622,7 +632,6 @@ body {
   color: #0f172a;
 }
 
-/* First-time welcome modal*/
 .welcome-modal-box {
   background: #ffffff;
   padding: 2.25rem 2rem;
@@ -667,7 +676,6 @@ body {
   margin-bottom: 1.5rem;
 }
 
-/* Opportunity edit modal */
 .edit-modal-box {
   max-width: 480px;
   text-align: left;
@@ -689,6 +697,19 @@ body {
   text-align: left;
 }
 
+#locationFilterInput {
+  min-width: 120px;
+  max-width: 170px;
+}
+
+@media (max-width: 640px) {
+  #locationFilterInput {
+    max-width: 100%;
+  }
+}
+
+
+/* Utilities */
 .hidden {
   display: none !important;
 }

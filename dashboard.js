@@ -10,6 +10,9 @@ const ADMIN_EMAILS = [
   "nkepedavid@gmail.com"
 ];
 
+let cachedOpportunities = [];
+let userAppliedIds = new Set();
+
 document.addEventListener("DOMContentLoaded", async () => {
   if (!supabaseClient) {
     console.error("Supabase client failed to initialize.");
@@ -27,7 +30,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const user = session.user;
   const userEmail = user.email ? user.email.toLowerCase() : "";
 
-  // 2. Reveal Admin Portal Btn if Admin
+  // 2. Reveal Admin Portal Button if Admin
   const adminPortalLink = document.getElementById("adminPortalLink");
   if (adminPortalLink && ADMIN_EMAILS.includes(userEmail)) {
     adminPortalLink.classList.remove("hidden");
@@ -45,7 +48,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // 5. Load Opportunities & Applications
+  // 5. Setup Live Filters
+  const searchInput = document.getElementById("searchInput");
+  const locationInput = document.getElementById("locationFilterInput");
+  const typeSelect = document.getElementById("typeFilterSelect");
+
+  if (searchInput) searchInput.addEventListener("input", filterAndRenderFeed);
+  if (locationInput) locationInput.addEventListener("input", filterAndRenderFeed);
+  if (typeSelect) typeSelect.addEventListener("change", filterAndRenderFeed);
+
+  // 6. Initial Load of Opportunities & Applications
   await loadOpportunities(user);
 });
 
@@ -60,7 +72,6 @@ function checkFirstTimeWelcome(user) {
     const closeBtn = document.getElementById("closeWelcomeModal");
     const dismissBtn = document.getElementById("dismissWelcomeBtn");
 
-    // Extract first name (from user metadata or email prefix)
     let firstName = "";
     if (user.user_metadata?.first_name) {
       firstName = user.user_metadata.first_name;
@@ -94,34 +105,61 @@ function checkFirstTimeWelcome(user) {
   }
 }
 
+// Fetch all listings and applications
 async function loadOpportunities(user) {
   const container = document.getElementById("opportunitiesList");
   if (!container || !supabaseClient) return;
 
-  const { data: opportunities, error: oppsError } = await supabaseClient
-    .from("opportunities")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const [oppsRes, appsRes] = await Promise.all([
+    supabaseClient.from("opportunities").select("*").order("created_at", { ascending: false }),
+    supabaseClient.from("applications").select("opportunity_id").eq("user_id", user.id)
+  ]);
 
-  const { data: applications } = await supabaseClient
-    .from("applications")
-    .select("opportunity_id")
-    .eq("user_id", user.id);
-
-  if (oppsError) {
-    container.innerHTML = `<p class="message error">Could not load opportunities: ${oppsError.message}</p>`;
+  if (oppsRes.error) {
+    container.innerHTML = `<p class="message error">Could not load opportunities: ${oppsRes.error.message}</p>`;
     return;
   }
 
-  if (!opportunities || opportunities.length === 0) {
-    container.innerHTML = `<p class="loading-text">No active opportunities found. Check back later.</p>`;
+  cachedOpportunities = oppsRes.data || [];
+  userAppliedIds = new Set((appsRes.data || []).map((app) => app.opportunity_id));
+
+  filterAndRenderFeed();
+}
+
+// Live Filtering Logic
+function filterAndRenderFeed() {
+  const container = document.getElementById("opportunitiesList");
+  if (!container) return;
+
+  const keyword = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
+  const location = (document.getElementById("locationFilterInput")?.value || "").toLowerCase().trim();
+  const selectedType = document.getElementById("typeFilterSelect")?.value || "";
+
+  const filtered = cachedOpportunities.filter((opp) => {
+    const matchesKeyword =
+      !keyword ||
+      (opp.title && opp.title.toLowerCase().includes(keyword)) ||
+      (opp.company && opp.company.toLowerCase().includes(keyword)) ||
+      (opp.description && opp.description.toLowerCase().includes(keyword));
+
+    const matchesLocation =
+      !location ||
+      (opp.location && opp.location.toLowerCase().includes(location));
+
+    const matchesType =
+      !selectedType ||
+      (opp.type && opp.type.toLowerCase() === selectedType.toLowerCase());
+
+    return matchesKeyword && matchesLocation && matchesType;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<p class="loading-text">No opportunities found matching your search criteria.</p>`;
     return;
   }
 
-  const appliedIds = new Set((applications || []).map((app) => app.opportunity_id));
-
-  container.innerHTML = opportunities.map((opp) => {
-    const hasApplied = appliedIds.has(opp.id);
+  container.innerHTML = filtered.map((opp) => {
+    const hasApplied = userAppliedIds.has(opp.id);
     return `
       <div class="card" id="card-${opp.id}">
         <div class="card-body">
@@ -175,6 +213,8 @@ window.applyOpportunity = async function (opportunityId) {
     }
     return;
   }
+
+  userAppliedIds.add(opportunityId);
 
   if (statusMsg) {
     statusMsg.className = "message success";
