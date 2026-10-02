@@ -116,6 +116,33 @@ document.addEventListener("DOMContentLoaded", () => {
           email,
           password,
         });
+        
+        // Ban 
+        const { data: { session }, error: loginError } =           await supabaseClient.auth.signInWithPassword({
+  email,
+  password
+});
+
+if (loginError) {
+  // handle bad credentials
+  return;
+}
+
+// Check account ban status
+const { data: profile } = await supabaseClient
+  .from("profiles")
+  .select("status")
+  .eq("id", session.user.id)
+  .maybeSingle();
+
+if (profile && profile.status === "banned") {
+  await supabaseClient.auth.signOut();
+  alert("Your account has been suspended. Please contact administration. Email: nkepedavid@gmail.com");
+  return;
+}
+
+// If active, proceed to dashboard
+window.location.href = "dashboard.html";
 
         if (error) {
           showMessage(error.message, true);
