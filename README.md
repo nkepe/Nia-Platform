@@ -3,22 +3,19 @@
 
 Nia is an information web based platform designed for graduates looking for entry level job roles, internship offers and attachments opportunities. 
 
-Tech stack-
-Frontend: html, .css, .js
-Backend: database:Supabase
+*Tech stack-*
+- Frontend: html, .css, .js
+- Backend: database:Supabase
 
-Key features-
+*Key features-*
 
-User registration and authentication.
-Profile setup and user information update.
-Opportunity feed to students.
-Application of opportunities. 
-Admin control, user management and post management.
+1. User registration and authentication.
+2. Profile setup and user information update.
+3. Opportunity feed to students.
+4. Application of opportunities. 
+5. Admin control, user management and post management.
 
 Demo login credentials (Admin/student)
+- email: nkepedavid@gmail.com password: 1234567
 
-email: nkepedavid@gmail.com
-password: 1234567
-
-email: jemimawanyika3@gmail.com 
-password: 123456
+- email: jemimawanyika3@gmail.com password: 123456
