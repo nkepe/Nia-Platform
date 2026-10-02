@@ -8,7 +8,7 @@
 
 ---
 
-## 📌 Table of Contents
+## Table of Contents
 - [Project Overview](#project-overview)
 - [Key Features](#key-features)
 - [System Architecture & Stack](#system-architecture--stack)
@@ -20,7 +20,7 @@
 
 ---
 
-## 🚀 Project Overview
+## Project Overview
 
 Tertiary students in emerging regions face significant friction in discovering verified industrial attachments and internship openings. **Nia** addresses this challenge through:
 1. **Centralized Discovery:** Consolidated listings of verified opportunities filtered by industry, location, and contract type.
@@ -29,7 +29,7 @@ Tertiary students in emerging regions face significant friction in discovering v
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
 ### Student Portal
 - **Session Authentication:** Secure authentication handling sign-up, sign-in, and persistent session state.
@@ -46,7 +46,7 @@ Tertiary students in emerging regions face significant friction in discovering v
 
 ---
 
-## 🛠 System Architecture & Stack
+## System Architecture & Stack
 
 | Layer | Technologies |
 | :--- | :--- |
@@ -59,7 +59,7 @@ Tertiary students in emerging regions face significant friction in discovering v
 
 ---
 
-## 🗄 Database Schema & Security (RLS)
+## Database Schema & Security (RLS)
 
 The platform enforces Row Level Security (RLS) across all operational tables to safeguard student data privacy:
 
@@ -78,7 +78,7 @@ Deletions execute via `ON DELETE CASCADE`:
 
 ---
 
-## 📁 File & Storage Specifications
+## File & Storage Specifications
 
 - **Bucket Identifier:** `resumes`
 - **Bucket Visibility:** `Public` (direct reading enabled for hiring administrators)
