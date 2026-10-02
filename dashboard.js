@@ -17,6 +17,28 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!supabaseClient) {
     console.error("Supabase client failed to initialize.");
     return;
+    
+    const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+
+if (sessionError || !session) {
+  window.location.href = "index.html";
+  return;
+}
+
+// Verify whether user has been banned since their token was issued
+const { data: profile } = await supabaseClient
+  .from("profiles")
+  .select("status")
+  .eq("id", session.user.id)
+  .maybeSingle();
+
+if (profile && profile.status === "banned") {
+  await supabaseClient.auth.signOut();
+  alert("Access Denied: Your account has been suspended by an administrator.");
+  window.location.href = "index.html";
+  return;
+}
+
   }
 
   // 1. Authentication Check
