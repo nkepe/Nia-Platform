@@ -202,7 +202,7 @@ async function loadAdminData() {
   const usersTbody = document.getElementById("usersTableBody");
 
   if (oppsTbody) oppsTbody.innerHTML = `<tr><td colspan="5" class="loading-text">Loading opportunities...</td></tr>`;
-  if (appsTbody) appsTbody.innerHTML = `<tr><td colspan="5" class="loading-text">Loading applications...</td></tr>`;
+  if (appsTbody) appsTbody.innerHTML = `<tr><td colspan="6" class="loading-text">Loading applications...</td></tr>`;
   if (usersTbody) usersTbody.innerHTML = `<tr><td colspan="5" class="loading-text">Loading users...</td></tr>`;
 
   try {
@@ -215,7 +215,6 @@ async function loadAdminData() {
     allOpportunities = oppsRes.data || [];
     allUsers = usersRes.data || [];
 
-    // Map opportunities to applications for title & company display
     const oppMap = new Map(allOpportunities.map(o => [o.id, o]));
     allApplications = (appsRes.data || []).map(app => ({
       ...app,
@@ -283,6 +282,7 @@ function applyFilterAndSort() {
   }
 }
 
+// 1. Opportunities Table View
 function renderOpportunitiesTable(list) {
   const tbody = document.getElementById("oppsTableBody");
   if (!tbody) return;
@@ -312,22 +312,30 @@ function renderOpportunitiesTable(list) {
   `).join("");
 }
 
+// 2. Applications Table View (with Resume / CV column)
 function renderApplicationsTable(list) {
   const tbody = document.getElementById("appsTableBody");
   if (!tbody) return;
 
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="loading-text">No applications found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="loading-text">No applications found.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = list.map(app => {
     const dateFormatted = app.created_at ? new Date(app.created_at).toLocaleDateString() : "Recently";
+    const resumeCell = app.resume_url
+      ? `<a href="${app.resume_url}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+          <i class="fa-solid fa-file-pdf" style="color: #dc2626;"></i> View CV
+        </a>`
+      : `<span style="font-size: 0.78rem; color: #94a3b8; font-style: italic;">Not attached</span>`;
+
     return `
       <tr>
         <td><strong>${app.user_email || "N/A"}</strong></td>
         <td>${app.oppTitle}</td>
         <td>${app.oppCompany}</td>
+        <td>${resumeCell}</td>
         <td>${dateFormatted}</td>
         <td>
           <div class="table-actions">
@@ -341,6 +349,7 @@ function renderApplicationsTable(list) {
   }).join("");
 }
 
+// 3. Users Table View
 function renderUsersTable(list) {
   const tbody = document.getElementById("usersTableBody");
   if (!tbody) return;
@@ -437,7 +446,7 @@ window.toggleBanUser = async function(userId, setBanned) {
   showStatusModal(true, "Updated", `User status changed to ${newStatus}.`);
 };
 
-// User Profile Delete
+// User Profile & Auth Deletion (via Database RPC)
 window.deleteUser = async function(userId) {
   if (!confirm("Are you sure you want to permanently delete this user and their account? This cannot be undone.")) return;
 
@@ -451,7 +460,6 @@ window.deleteUser = async function(userId) {
       return;
     }
 
-    // Remove from in-memory cache and re-render
     allUsers = allUsers.filter(u => u.id !== userId);
     allApplications = allApplications.filter(a => a.user_id !== userId);
     applyFilterAndSort();

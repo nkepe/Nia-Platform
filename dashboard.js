@@ -12,39 +12,31 @@ const ADMIN_EMAILS = [
 
 let cachedOpportunities = [];
 let userAppliedIds = new Set();
+let pendingOpportunityId = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   if (!supabaseClient) {
     console.error("Supabase client failed to initialize.");
     return;
-    
-    const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-
-if (sessionError || !session) {
-  window.location.href = "index.html";
-  return;
-}
-
-// Verify whether user has been banned since their token was issued
-const { data: profile } = await supabaseClient
-  .from("profiles")
-  .select("status")
-  .eq("id", session.user.id)
-  .maybeSingle();
-
-if (profile && profile.status === "banned") {
-  await supabaseClient.auth.signOut();
-  alert("Access Denied: Your account has been suspended by an administrator.");
-  window.location.href = "index.html";
-  return;
-}
-
   }
 
-  // 1. Authentication Check
+  // 1. Authentication Check & Ban Verification
   const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
   if (sessionError || !session) {
+    window.location.href = "index.html";
+    return;
+  }
+
+  const { data: profile } = await supabaseClient
+    .from("profiles")
+    .select("status")
+    .eq("id", session.user.id)
+    .maybeSingle();
+
+  if (profile && profile.status === "banned") {
+    await supabaseClient.auth.signOut();
+    alert("Access Denied: Your account has been suspended by an administrator.");
     window.location.href = "index.html";
     return;
   }
@@ -70,7 +62,10 @@ if (profile && profile.status === "banned") {
     });
   }
 
-  // 5. Setup Live Filters
+  // 5. Setup CV Modal Handlers
+  setupCvModal();
+
+  // 6. Setup Live Filters
   const searchInput = document.getElementById("searchInput");
   const locationInput = document.getElementById("locationFilterInput");
   const typeSelect = document.getElementById("typeFilterSelect");
@@ -79,9 +74,40 @@ if (profile && profile.status === "banned") {
   if (locationInput) locationInput.addEventListener("input", filterAndRenderFeed);
   if (typeSelect) typeSelect.addEventListener("change", filterAndRenderFeed);
 
-  // 6. Initial Load of Opportunities & Applications
+  // 7. Initial Load of Opportunities & Applications
   await loadOpportunities(user);
 });
+
+// CV Advice Modal Setup
+function setupCvModal() {
+  const cvModal = document.getElementById("cvAdviceModal");
+  const closeCvAdviceBtn = document.getElementById("closeCvAdviceBtn");
+  const proceedWithoutCvBtn = document.getElementById("proceedWithoutCvBtn");
+
+  if (closeCvAdviceBtn && cvModal) {
+    closeCvAdviceBtn.addEventListener("click", () => {
+      cvModal.classList.add("hidden");
+      pendingOpportunityId = null;
+    });
+  }
+
+  if (proceedWithoutCvBtn && cvModal) {
+    proceedWithoutCvBtn.addEventListener("click", async () => {
+      cvModal.classList.add("hidden");
+      if (pendingOpportunityId) {
+        await executeApplication(pendingOpportunityId, null);
+        pendingOpportunityId = null;
+      }
+    });
+  }
+
+  window.addEventListener("click", (e) => {
+    if (e.target === cvModal) {
+      cvModal.classList.add("hidden");
+      pendingOpportunityId = null;
+    }
+  });
+}
 
 // Welcome Modal Handler
 function checkFirstTimeWelcome(user) {
@@ -207,7 +233,7 @@ function filterAndRenderFeed() {
   }).join("");
 }
 
-// Apply Function
+// Check Profile CV and Trigger Modal or Execute Application
 window.applyOpportunity = async function (opportunityId) {
   if (!supabaseClient) return;
 
@@ -217,11 +243,37 @@ window.applyOpportunity = async function (opportunityId) {
     return;
   }
 
+  const { data: profile } = await supabaseClient
+    .from("profiles")
+    .select("resume_url")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  // If no CV uploaded, open the advisory modal
+  if (!profile?.resume_url) {
+    pendingOpportunityId = opportunityId;
+    const cvModal = document.getElementById("cvAdviceModal");
+    if (cvModal) {
+      cvModal.classList.remove("hidden");
+      return;
+    }
+  }
+
+  // If CV exists, apply immediately
+  await executeApplication(opportunityId, profile?.resume_url || null);
+};
+
+// Database Insertion
+async function executeApplication(opportunityId, resumeUrl) {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) return;
+
   const { error } = await supabaseClient.from("applications").insert([
     {
       opportunity_id: opportunityId,
       user_id: user.id,
       user_email: user.email,
+      resume_url: resumeUrl
     },
   ]);
 
@@ -248,4 +300,4 @@ window.applyOpportunity = async function (opportunityId) {
   if (cardAction) {
     cardAction.innerHTML = `<button class="btn btn-applied" disabled>Applied</button>`;
   }
-};
+}

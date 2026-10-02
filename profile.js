@@ -72,11 +72,12 @@ function setupTabs() {
   });
 }
 
-// user profile
+// User Profile Loader
 async function loadUserProfile() {
   const emailInput = document.getElementById("profileEmail");
   const displayEmail = document.getElementById("displayEmail");
   const displayFullName = document.getElementById("displayFullName");
+  const resumeStatus = document.getElementById("resumeStatus");
 
   if (emailInput) emailInput.value = currentUser.email || "";
   if (displayEmail) displayEmail.textContent = currentUser.email || "";
@@ -95,7 +96,12 @@ async function loadUserProfile() {
     const name = profile?.full_name || currentUser.user_metadata?.full_name || "Graduate";
     if (displayFullName) displayFullName.textContent = name;
 
-    // form fields
+    // Display existing uploaded resume if present
+    if (profile?.resume_url && resumeStatus) {
+      resumeStatus.innerHTML = `Current resume: <a href="${profile.resume_url}" target="_blank" style="color: #0f172a; font-weight: 600; text-decoration: underline;">View Uploaded Resume</a>`;
+    }
+
+    // Populate form fields
     document.getElementById("profileFullName").value = profile?.full_name || currentUser.user_metadata?.full_name || "";
     document.getElementById("profilePhone").value = profile?.phone || "";
     document.getElementById("profileInstitution").value = profile?.institution || "";
@@ -106,7 +112,7 @@ async function loadUserProfile() {
   }
 }
 
-// Update profile details
+// Update Profile & Upload Resume
 function setupProfileForm() {
   const form = document.getElementById("profileForm");
   const saveBtn = document.getElementById("saveProfileBtn");
@@ -121,11 +127,46 @@ function setupProfileForm() {
     const institution = document.getElementById("profileInstitution").value.trim();
     const course = document.getElementById("profileCourse").value.trim();
     const bio = document.getElementById("profileBio").value.trim();
+    const fileInput = document.getElementById("profileResume");
+    const file = fileInput?.files?.[0];
+
+    let resumeUrl = null;
 
     saveBtn.disabled = true;
-    saveBtn.textContent = "Saving...";
+    saveBtn.textContent = "Uploading & Saving...";
 
     try {
+      // 1. Upload CV to Storage if a new file was selected
+      if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+          showMessage("File size exceeds 5MB limit.", true);
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save Profile";
+          return;
+        }
+
+        const fileExt = file.name.split(".").pop();
+        const filePath = `${currentUser.id}/resume_${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabaseClient.storage
+          .from("resumes")
+          .upload(filePath, file, { upsert: true });
+
+        if (uploadError) {
+          showMessage("Resume upload failed: " + uploadError.message, true);
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save Profile";
+          return;
+        }
+
+        const { data: urlData } = supabaseClient.storage
+          .from("resumes")
+          .getPublicUrl(filePath);
+
+        resumeUrl = urlData.publicUrl;
+      }
+
+      // 2. Prepare database payload
       const updates = {
         id: currentUser.id,
         email: currentUser.email,
@@ -137,17 +178,29 @@ function setupProfileForm() {
         updated_at: new Date().toISOString()
       };
 
-      const { error } = await supabaseClient
+      if (resumeUrl) {
+        updates.resume_url = resumeUrl;
+      }
+
+      const { error: profileError } = await supabaseClient
         .from("profiles")
         .upsert(updates);
 
-      if (error) {
-        showMessage("Failed to update profile: " + error.message, true);
+      if (profileError) {
+        showMessage("Failed to update profile: " + profileError.message, true);
         return;
       }
 
       document.getElementById("displayFullName").textContent = fullName || "Graduate";
-      showMessage("Profile details updated successfully!");
+
+      if (resumeUrl) {
+        const resumeStatus = document.getElementById("resumeStatus");
+        if (resumeStatus) {
+          resumeStatus.innerHTML = `Current resume: <a href="${resumeUrl}" target="_blank" style="color: #0f172a; font-weight: 600; text-decoration: underline;">View Uploaded Resume</a>`;
+        }
+      }
+
+      showMessage("Profile and resume saved successfully!");
     } catch (err) {
       showMessage("An unexpected error occurred: " + err.message, true);
     } finally {
@@ -157,13 +210,12 @@ function setupProfileForm() {
   });
 }
 
-// Fetch applied opportunities
+// Fetch Applied Opportunities
 async function loadAppliedOpportunities() {
   const container = document.getElementById("applicationsList");
   if (!container) return;
 
   try {
-    // 1. Get application records
     const { data: applications, error: appsError } = await supabaseClient
       .from("applications")
       .select("opportunity_id, created_at")
@@ -180,7 +232,6 @@ async function loadAppliedOpportunities() {
       return;
     }
 
-    // 2. Fetch opportunity details
     const oppIds = applications.map(a => a.opportunity_id);
     const { data: opportunities, error: oppsError } = await supabaseClient
       .from("opportunities")

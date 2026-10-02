@@ -95,9 +95,23 @@
               <label for="profileBio">Bio / Career Summary</label>
               <textarea id="profileBio" rows="3" placeholder="Brief summary about your career goals and technical skills..."></textarea>
             </div>
+
+            <!-- Styled CV Upload Area -->
+            <div class="form-group form-span-2">
+              <label for="profileResume">Resume / CV (PDF or DOCX, max 30MB)</label>
+              <div class="file-upload-wrapper">
+                <input type="file" id="profileResume" accept=".pdf,.doc,.docx" class="file-input-hidden" />
+                <label for="profileResume" class="file-upload-box">
+                  <i class="fa-solid fa-cloud-arrow-up file-upload-icon"></i>
+                  <span id="fileUploadName" class="file-upload-text">Choose a file or drag & drop</span>
+                  <span class="file-upload-subtext">PDF, DOC, DOCX up to 30MB</span>
+                </label>
+              </div>
+              <div id="resumeStatus" class="resume-status-text"></div>
+            </div>
           </div>
 
-          <button type="submit" id="saveProfileBtn" class="btn btn-primary btn-full">
+          <button type="submit" id="saveProfileBtn" class="btn btn-primary btn-full" style="margin-top: 1.5rem;">
             Save Profile
           </button>
         </form>

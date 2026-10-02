@@ -74,6 +74,20 @@
       <p class="loading-text">Fetching listings...</p>
     </section>
   </main>
+  
+  <!-- CV Advisory Modal -->
+<div id="cvAdviceModal" class="status-modal-overlay hidden" aria-modal="true" role="dialog">
+  <div class="status-modal-box">
+    <div class="status-modal-icon">📄</div>
+    <h3>Attach a Resume?</h3>
+    <p>You haven't uploaded a CV yet. <strong>Attaching a CV gives you a significant advantage</strong> with hiring managers.</p>
+    <div class="modal-actions" style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 1.25rem;">
+      <a href="profile.html" class="btn btn-outline" style="flex: 1;">Upload CV</a>
+      <button id="proceedWithoutCvBtn" class="btn btn-primary" style="flex: 1;">Apply Anyway</button>
+    </div>
+    <button id="closeCvAdviceBtn" class="modal-close-btn" aria-label="Close">&times;</button>
+  </div>
+</div>
 
   <!-- Welcome Modal for New Users -->
   <div id="welcomeModal" class="status-modal-overlay hidden" aria-modal="true" role="dialog">
