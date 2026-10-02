@@ -1,7 +1,7 @@
 # Nia - Platform 
 
 [![GitHub Release](https://img.shields.io/github/v/release/nkepe/Nia-Platform?color=0f172a&label=version)](https://github.com/nkepe/Nia-Platform/releases/tag/v1.0.0)
-[![License: No License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: No License](https://img.shields.io/badge/License-NoLicense-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Supabase](https://img.shields.io/badge/Backend-Supabase-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
 
 **Nia** is a web-based recruitment and attachment matching platform engineered to bridge the gap between tertiary institution students, graduates, and prospective employers across Kenya. The application streamlines student discovery of industrial attachments, internships, and entry-level positions, providing direct application workflows, CV attachment capabilities, and a dedicated administrative console for moderation. Link https://nkepe.github.io/Nia-Platform/
