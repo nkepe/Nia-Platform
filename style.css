@@ -242,3 +242,60 @@ body {
 .hidden {
   display: none !important;
 }
+
+/* OTP Specific Styles */
+.otp-header {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.otp-title {
+  font-size: 1.25rem;
+  color: #0f172a;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.otp-desc {
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.otp-desc strong {
+  color: #0f172a;
+}
+
+.otp-input {
+  text-align: center;
+  font-size: 1.6rem !important;
+  letter-spacing: 0.45rem;
+  font-weight: 700;
+}
+
+.otp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.2rem;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.link-btn:hover {
+  color: #0f172a;
+}
+
+.dot-separator {
+  color: #cbd5e1;
+  font-size: 0.8rem;
+}
