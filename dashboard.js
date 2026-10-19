@@ -1,4 +1,3 @@
-// Routed securely via Cloudflare Worker reverse gateway
 const GATEWAY_URL = "https://nia-gateway.davidkasimilu71.workers.dev";
 const EDGE_KEY = "cf-worker-edge-managed";
 
@@ -27,7 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // 1. Authentication Check & Ban Verification
+  // Auth Check & Ban verification
   const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
   if (sessionError || !session) {
@@ -51,16 +50,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   const user = session.user;
   const userEmail = user.email ? user.email.toLowerCase() : "";
 
-  // 2. Reveal Admin Portal Button if Admin
+  // Reveal Admin Portal Button if Admin
   const adminPortalLink = document.getElementById("adminPortalLink");
   if (adminPortalLink && ADMIN_EMAILS.includes(userEmail)) {
     adminPortalLink.classList.remove("hidden");
   }
 
-  // 3. First-Time User Welcome Modal Check
+  // First-Time User Welcome Modal Check
   checkFirstTimeWelcome(user);
 
-  // 4. Logout (Top-Right Icon)
+  // Logout 
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
@@ -69,10 +68,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // 5. Setup CV Modal Handlers
+  // CV Modal Handlers
   setupCvModal();
 
-  // 6. Setup Live Filters
+  // Setup Filters
   const searchInput = document.getElementById("searchInput");
   const locationInput = document.getElementById("locationFilterInput");
   const typeSelect = document.getElementById("typeFilterSelect");
@@ -81,7 +80,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (locationInput) locationInput.addEventListener("input", filterAndRenderFeed);
   if (typeSelect) typeSelect.addEventListener("change", filterAndRenderFeed);
 
-  // 7. Initial Load of Opportunities & Applications
+  // Initial Load of Opportunities & Applications
   await loadOpportunities(user);
 });
 
@@ -181,7 +180,7 @@ async function loadOpportunities(user) {
   filterAndRenderFeed();
 }
 
-// Live Filtering Logic
+// Filtering Logic
 function filterAndRenderFeed() {
   const container = document.getElementById("opportunitiesList");
   if (!container) return;
