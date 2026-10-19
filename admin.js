@@ -1,4 +1,3 @@
-// Routed securely via Cloudflare Worker reverse gateway
 const GATEWAY_URL = "https://nia-gateway.davidkasimilu71.workers.dev";
 const EDGE_KEY = "cf-worker-edge-managed";
 
@@ -17,11 +16,11 @@ const ADMIN_EMAILS = [
   "nkepedavid@gmail.com"
 ];
 
-// In-memory data store
+// In-memory data
 let allOpportunities = [];
 let allApplications = [];
 let allUsers = [];
-let currentSubView = "opps"; // 'opps', 'apps', or 'users'
+let currentSubView = "opps"; 
 
 function showStatusModal(isSuccess, title, message) {
   const modal = document.getElementById("statusModal");
@@ -235,7 +234,7 @@ async function loadAdminData() {
   }
 }
 
-// Search and Sorting Pipeline
+// Search and Sorting 
 function applyFilterAndSort() {
   const query = (document.getElementById("adminSearchInput")?.value || "").toLowerCase().trim();
   const sortMode = document.getElementById("adminSortSelect")?.value || "newest";
@@ -319,7 +318,7 @@ function renderOpportunitiesTable(list) {
   `).join("");
 }
 
-// 2. Applications Table View (with Resume / CV column)
+// 2. Applications Table View
 function renderApplicationsTable(list) {
   const tbody = document.getElementById("appsTableBody");
   if (!tbody) return;
@@ -414,7 +413,7 @@ window.deleteOpportunity = async function(id, title) {
   showStatusModal(true, "Deleted", `"${title}" has been removed.`);
 };
 
-// Delete Application (with exact key matching)
+// Delete Application 
 window.deleteApplication = async function(appIdentifier) {
   if (!confirm("Are you sure you want to remove this application record?")) return;
 
@@ -460,7 +459,7 @@ window.toggleBanUser = async function(userId, setBanned) {
   showStatusModal(true, "Updated", `User status changed to ${newStatus}.`);
 };
 
-// User Profile & Auth Deletion (via Database RPC)
+// User Profile & Auth Deletion 
 window.deleteUser = async function(userId) {
   if (!confirm("Are you sure you want to permanently delete this user and their account? This cannot be undone.")) return;
 
@@ -484,7 +483,7 @@ window.deleteUser = async function(userId) {
   }
 };
 
-// Edit Opportunity Setup
+// Edit Opportunity
 function setupEditModal() {
   const modal = document.getElementById("editOppModal");
   const closeBtn = document.getElementById("closeEditModal");
