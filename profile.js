@@ -1,4 +1,3 @@
-// Routed securely via Cloudflare Worker reverse gateway
 const GATEWAY_URL = "https://nia-gateway.davidkasimilu71.workers.dev";
 const EDGE_KEY = "cf-worker-edge-managed";
 
@@ -29,7 +28,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // 1. Session & Auth Check
+  // Session & Auth Check
   const { data: { session }, error } = await supabaseClient.auth.getSession();
   if (error || !session) {
     window.location.href = "index.html";
@@ -38,7 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   currentUser = session.user;
 
-  // 2. Setup Top-Right Sign Out
+  // Setup Top-Right Sign Out
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
@@ -47,14 +46,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // 3. Tab Switching
+  // Tab Switching
   setupTabs();
 
-  // 4. Load Data
+  // Load Data
   await loadUserProfile();
   await loadAppliedOpportunities();
 
-  // 5. Form Submit Handler
+  // Form Submit Handler
   setupProfileForm();
 });
 
@@ -143,7 +142,7 @@ function setupProfileForm() {
     saveBtn.textContent = "Uploading & Saving...";
 
     try {
-      // 1. Upload CV to Storage if a new file was selected
+      // Upload CV to Storage if a new file was selected
       if (file) {
         if (file.size > 5 * 1024 * 1024) {
           showMessage("File size exceeds 5MB limit.", true);
@@ -173,7 +172,7 @@ function setupProfileForm() {
         resumeUrl = urlData.publicUrl;
       }
 
-      // 2. Prepare database payload
+      // Prepare database payload
       const updates = {
         id: currentUser.id,
         email: currentUser.email,
