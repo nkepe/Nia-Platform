@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (tabSignUp) tabSignUp.addEventListener("click", showSignUpView);
   if (backToSignupBtn) backToSignupBtn.addEventListener("click", showSignUpView);
 
-  // --- Cloudflare Worker Reverse Gateway Configuration ---
+  // Cloudflare Worker
   const GATEWAY_URL = "https://nia-gateway.davidkasimilu71.workers.dev";
   const EDGE_KEY = "cf-worker-edge-managed";
 
@@ -143,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- Sign In ---
+  // Sign In
   if (signInForm) {
     signInForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -199,7 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- Sign Up ---
+  // Sign Up
   if (signUpForm) {
     signUpForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -246,7 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- Verify OTP ---
+  // Verify one time password
   if (otpForm) {
     otpForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -291,7 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- Resend OTP ---
+  // Resend OTP
   if (resendOtpBtn) {
     resendOtpBtn.addEventListener("click", async () => {
       if (!pendingEmail) return;
