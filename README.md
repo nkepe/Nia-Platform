@@ -54,6 +54,7 @@ Tertiary students in emerging regions face significant friction in discovering v
 | **Authentication** | Supabase Auth (JWT-based session management) |
 | **Database** | PostgreSQL hosted on Supabase |
 | **Cloud Storage** | Supabase S3-Compatible Object Storage |
+| **URL & pk Security** | Cloudflare EDGE workers |
 | **Authorization** | Row Level Security (RLS) Policies & Postgres Functions |
 
 ---
