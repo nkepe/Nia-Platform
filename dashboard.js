@@ -1,8 +1,15 @@
-const SUPABASE_URL = "https://ypaogamdapbvuzwphngh.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_wI8kuJuKQaH2-JO63Og5wA_LjoiHuJ4";
+// Routed securely via Cloudflare Worker reverse gateway
+const GATEWAY_URL = "https://nia-gateway.davidkasimilu71.workers.dev";
+const EDGE_KEY = "cf-worker-edge-managed";
 
 const supabaseClient = window.supabase
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  ? window.supabase.createClient(GATEWAY_URL, EDGE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    })
   : null;
 
 const ADMIN_EMAILS = [

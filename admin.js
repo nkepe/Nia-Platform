@@ -1,8 +1,15 @@
-const SUPABASE_URL = "https://ypaogamdapbvuzwphngh.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_wI8kuJuKQaH2-JO63Og5wA_LjoiHuJ4";
+// Routed securely via Cloudflare Worker reverse gateway
+const GATEWAY_URL = "https://nia-gateway.davidkasimilu71.workers.dev";
+const EDGE_KEY = "cf-worker-edge-managed";
 
 const supabaseClient = window.supabase
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  ? window.supabase.createClient(GATEWAY_URL, EDGE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    })
   : null;
 
 const ADMIN_EMAILS = [
@@ -330,7 +337,6 @@ function renderApplicationsTable(list) {
         </a>`
       : `<span style="font-size: 0.78rem; color: #94a3b8; font-style: italic;">Not attached</span>`;
 
-    // Ensure we pass the record's primary id if present, otherwise fallback to opportunity_id
     const appIdentifier = app.id || app.opportunity_id;
 
     return `
@@ -414,7 +420,6 @@ window.deleteApplication = async function(appIdentifier) {
 
   let query = supabaseClient.from("applications").delete();
 
-  // If the identifier contains a dash or is a UUID, attempt by primary key 'id', else 'opportunity_id'
   if (appIdentifier.includes("-")) {
     query = query.eq("id", appIdentifier);
   } else {

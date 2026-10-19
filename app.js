@@ -94,11 +94,18 @@ document.addEventListener("DOMContentLoaded", () => {
   if (tabSignUp) tabSignUp.addEventListener("click", showSignUpView);
   if (backToSignupBtn) backToSignupBtn.addEventListener("click", showSignUpView);
 
-  const SUPABASE_URL = "https://ypaogamdapbvuzwphngh.supabase.co";
-  const SUPABASE_ANON_KEY = "sb_publishable_wI8kuJuKQaH2-JO63Og5wA_LjoiHuJ4";
+  // --- Cloudflare Worker Reverse Gateway Configuration ---
+  const GATEWAY_URL = "https://nia-gateway.davidkasimilu71.workers.dev";
+  const EDGE_KEY = "cf-worker-edge-managed";
 
   const supabaseClient = window.supabase
-    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    ? window.supabase.createClient(GATEWAY_URL, EDGE_KEY, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+        },
+      })
     : null;
 
   const ADMIN_EMAILS = [
@@ -261,7 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const { data, error } = await supabaseClient.auth.verifyOtp({
           email: pendingEmail,
           token: token,
-          type: "signup"
+          type: "signup",
         });
 
         if (error) {
