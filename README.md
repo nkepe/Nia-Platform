@@ -5,7 +5,7 @@
 [![Supabase](https://img.shields.io/badge/Backend-Supabase-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
 ![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=flat&logo=cloudflare&logoColor=white)
 
-**Nia** is a web-based recruitment and attachment matching platform engineered to bridge the gap between tertiary institution students, graduates, and prospective employers across Kenya. The application streamlines student discovery of industrial attachments, internships, and entry-level positions, providing direct application workflows, CV attachment capabilities, and a dedicated administrative console for moderation. Link https://nkepe.github.io/Nia-Platform/
+**Nia** is a web-based recruitment and attachment matching platform engineered to bridge the gap between tertiary institution students, graduates, and prospective employers across Kenya. The application streamlines student discovery of industrial attachments, internships, and entry-level positions, providing direct application workflows, CV attachment capabilities, and a dedicated administrative console for moderation.
 
 ---
 
