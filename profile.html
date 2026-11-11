@@ -107,7 +107,14 @@
                   <span class="file-upload-subtext">PDF, DOC, DOCX up to 30MB</span>
                 </label>
               </div>
-              <div id="resumeStatus" class="resume-status-text"></div>
+              
+              <!-- Resume Status & Delete Action Bar -->
+              <div class="resume-actions-bar" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div id="resumeStatus" class="resume-status-text"></div>
+                <button type="button" id="deleteCvBtn" class="btn btn-danger hidden" style="background-color: #dc3545; color: #fff; padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 6px; border: none; cursor: pointer;">
+                  <i class="fa-solid fa-trash-can"></i> Delete CV
+                </button>
+              </div>
             </div>
           </div>
 
@@ -125,6 +132,20 @@
       </div>
     </section>
   </main>
+
+  <!-- Delete CV Confirmation Modal -->
+  <div id="deleteCvModal" class="status-modal-overlay hidden" aria-modal="true" role="dialog">
+    <div class="status-modal-box">
+      <div class="status-modal-icon">🗑️</div>
+      <h3>Delete Resume / CV?</h3>
+      <p>Are you sure you want to delete your current CV? This action cannot be undone.</p>
+      <div class="modal-actions" style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 1.25rem;">
+        <button id="cancelDeleteCvBtn" class="btn btn-outline" style="flex: 1;">Cancel</button>
+        <button id="confirmDeleteCvBtn" class="btn btn-danger" style="flex: 1; background-color: #dc3545; color: #fff; border: none;">Confirm Delete</button>
+      </div>
+      <button id="closeDeleteCvModalBtn" class="modal-close-btn" aria-label="Close">&times;</button>
+    </div>
+  </div>
 
   <script src="profile.js"></script>
 </body>

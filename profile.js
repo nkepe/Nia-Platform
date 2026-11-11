@@ -12,6 +12,7 @@ const supabaseClient = window.supabase
   : null;
 
 let currentUser = null;
+let currentProfileData = null;
 
 function showMessage(text, isError = false) {
   const msgElem = document.getElementById("statusMessage");
@@ -49,6 +50,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Tab Switching
   setupTabs();
 
+  // CV Delete Modal Setup
+  setupDeleteCvModal();
+
   // Load Data
   await loadUserProfile();
   await loadAppliedOpportunities();
@@ -63,19 +67,21 @@ function setupTabs() {
   const basicInfoSection = document.getElementById("basicInfoSection");
   const applicationsSection = document.getElementById("applicationsSection");
 
-  tabBasicInfo.addEventListener("click", () => {
-    tabBasicInfo.classList.add("active");
-    tabApplications.classList.remove("active");
-    basicInfoSection.classList.remove("hidden");
-    applicationsSection.classList.add("hidden");
-  });
+  if (tabBasicInfo && tabApplications) {
+    tabBasicInfo.addEventListener("click", () => {
+      tabBasicInfo.classList.add("active");
+      tabApplications.classList.remove("active");
+      basicInfoSection.classList.remove("hidden");
+      applicationsSection.classList.add("hidden");
+    });
 
-  tabApplications.addEventListener("click", () => {
-    tabApplications.classList.add("active");
-    tabBasicInfo.classList.remove("active");
-    applicationsSection.classList.remove("hidden");
-    basicInfoSection.classList.add("hidden");
-  });
+    tabApplications.addEventListener("click", () => {
+      tabApplications.classList.add("active");
+      tabBasicInfo.classList.remove("active");
+      applicationsSection.classList.remove("hidden");
+      basicInfoSection.classList.add("hidden");
+    });
+  }
 }
 
 // User Profile Loader
@@ -83,7 +89,6 @@ async function loadUserProfile() {
   const emailInput = document.getElementById("profileEmail");
   const displayEmail = document.getElementById("displayEmail");
   const displayFullName = document.getElementById("displayFullName");
-  const resumeStatus = document.getElementById("resumeStatus");
 
   if (emailInput) emailInput.value = currentUser.email || "";
   if (displayEmail) displayEmail.textContent = currentUser.email || "";
@@ -99,13 +104,13 @@ async function loadUserProfile() {
       console.warn("Could not fetch profile details:", error.message);
     }
 
+    currentProfileData = profile;
+
     const name = profile?.full_name || currentUser.user_metadata?.full_name || "Graduate";
     if (displayFullName) displayFullName.textContent = name;
 
-    // Display existing uploaded resume if present
-    if (profile?.resume_url && resumeStatus) {
-      resumeStatus.innerHTML = `Current resume: <a href="${profile.resume_url}" target="_blank" style="color: #0f172a; font-weight: 600; text-decoration: underline;">View Uploaded Resume</a>`;
-    }
+    // Render resume status and toggle delete button visibility
+    renderCvStatus(profile?.resume_url);
 
     // Populate form fields
     document.getElementById("profileFullName").value = profile?.full_name || currentUser.user_metadata?.full_name || "";
@@ -118,10 +123,132 @@ async function loadUserProfile() {
   }
 }
 
+// Render CV status text & toggle Delete button
+function renderCvStatus(resumeUrl) {
+  const resumeStatus = document.getElementById("resumeStatus");
+  const deleteCvBtn = document.getElementById("deleteCvBtn");
+
+  if (resumeUrl) {
+    if (resumeStatus) {
+      resumeStatus.innerHTML = `Current resume: <a href="${resumeUrl}" target="_blank" style="color: #0f172a; font-weight: 600; text-decoration: underline;">View Uploaded Resume</a>`;
+    }
+    if (deleteCvBtn) {
+      deleteCvBtn.classList.remove("hidden");
+    }
+  } else {
+    if (resumeStatus) {
+      resumeStatus.innerHTML = `<span style="color: #64748b;">No CV currently uploaded.</span>`;
+    }
+    if (deleteCvBtn) {
+      deleteCvBtn.classList.add("hidden");
+    }
+  }
+}
+
+// Delete CV Modal & Logic
+function setupDeleteCvModal() {
+  const deleteCvBtn = document.getElementById("deleteCvBtn");
+  const deleteCvModal = document.getElementById("deleteCvModal");
+  const cancelDeleteCvBtn = document.getElementById("cancelDeleteCvBtn");
+  const closeDeleteCvModalBtn = document.getElementById("closeDeleteCvModalBtn");
+  const confirmDeleteCvBtn = document.getElementById("confirmDeleteCvBtn");
+
+  const hideModal = () => {
+    if (deleteCvModal) deleteCvModal.classList.add("hidden");
+  };
+
+  if (deleteCvBtn) {
+    deleteCvBtn.addEventListener("click", () => {
+      if (deleteCvModal) deleteCvModal.classList.remove("hidden");
+    });
+  }
+
+  if (cancelDeleteCvBtn) cancelDeleteCvBtn.addEventListener("click", hideModal);
+  if (closeDeleteCvModalBtn) closeDeleteCvModalBtn.addEventListener("click", hideModal);
+
+  if (deleteCvModal) {
+    deleteCvModal.addEventListener("click", (e) => {
+      if (e.target === deleteCvModal) hideModal();
+    });
+  }
+
+  if (confirmDeleteCvBtn) {
+    confirmDeleteCvBtn.addEventListener("click", async () => {
+      hideModal();
+      await executeDeleteCv();
+    });
+  }
+}
+
+// Execute Storage & Database Deletion
+async function executeDeleteCv() {
+  try {
+    const resumeUrl = currentProfileData?.resume_url;
+
+    if (resumeUrl) {
+      // Try extracting file path from Supabase Public Storage URL
+      let filePath = null;
+      if (resumeUrl.includes("/storage/v1/object/public/resumes/")) {
+        filePath = resumeUrl.split("/storage/v1/object/public/resumes/")[1];
+      }
+
+      if (filePath) {
+        const { error: storageError } = await supabaseClient.storage
+          .from("resumes")
+          .remove([decodeURIComponent(filePath)]);
+
+        if (storageError) {
+          console.warn("Storage removal warning:", storageError.message);
+        }
+      }
+    }
+
+    // Set resume_url to NULL in profiles table
+    const { error: dbError } = await supabaseClient
+      .from("profiles")
+      .update({
+        resume_url: null,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", currentUser.id);
+
+    if (dbError) throw dbError;
+
+    if (currentProfileData) {
+      currentProfileData.resume_url = null;
+    }
+
+    // Update UI elements
+    renderCvStatus(null);
+    const fileInput = document.getElementById("profileResume");
+    if (fileInput) fileInput.value = "";
+    
+    const fileUploadText = document.getElementById("fileUploadName");
+    if (fileUploadText) fileUploadText.textContent = "Choose a file or drag & drop";
+
+    showMessage("Your CV has been successfully deleted.");
+  } catch (err) {
+    console.error("Delete CV Exception:", err);
+    showMessage("Failed to delete CV: " + err.message, true);
+  }
+}
+
 // Update Profile & Upload Resume
 function setupProfileForm() {
   const form = document.getElementById("profileForm");
   const saveBtn = document.getElementById("saveProfileBtn");
+  const fileInput = document.getElementById("profileResume");
+  const fileUploadName = document.getElementById("fileUploadName");
+
+  if (fileInput && fileUploadName) {
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length > 0) {
+        fileUploadName.textContent = fileInput.files[0].name;
+      } else {
+        fileUploadName.textContent = "Choose a file or drag & drop";
+      }
+    });
+  }
 
   if (!form) return;
 
@@ -133,10 +260,9 @@ function setupProfileForm() {
     const institution = document.getElementById("profileInstitution").value.trim();
     const course = document.getElementById("profileCourse").value.trim();
     const bio = document.getElementById("profileBio").value.trim();
-    const fileInput = document.getElementById("profileResume");
     const file = fileInput?.files?.[0];
 
-    let resumeUrl = null;
+    let resumeUrl = currentProfileData?.resume_url || null;
 
     saveBtn.disabled = true;
     saveBtn.textContent = "Uploading & Saving...";
@@ -144,8 +270,8 @@ function setupProfileForm() {
     try {
       // Upload CV to Storage if a new file was selected
       if (file) {
-        if (file.size > 5 * 1024 * 1024) {
-          showMessage("File size exceeds 5MB limit.", true);
+        if (file.size > 30 * 1024 * 1024) {
+          showMessage("File size exceeds 30MB limit.", true);
           saveBtn.disabled = false;
           saveBtn.textContent = "Save Profile";
           return;
@@ -181,12 +307,9 @@ function setupProfileForm() {
         institution: institution,
         course: course,
         bio: bio,
+        resume_url: resumeUrl,
         updated_at: new Date().toISOString()
       };
-
-      if (resumeUrl) {
-        updates.resume_url = resumeUrl;
-      }
 
       const { error: profileError } = await supabaseClient
         .from("profiles")
@@ -197,14 +320,13 @@ function setupProfileForm() {
         return;
       }
 
+      if (!currentProfileData) currentProfileData = {};
+      currentProfileData.resume_url = resumeUrl;
+      currentProfileData.full_name = fullName;
+
       document.getElementById("displayFullName").textContent = fullName || "Graduate";
 
-      if (resumeUrl) {
-        const resumeStatus = document.getElementById("resumeStatus");
-        if (resumeStatus) {
-          resumeStatus.innerHTML = `Current resume: <a href="${resumeUrl}" target="_blank" style="color: #0f172a; font-weight: 600; text-decoration: underline;">View Uploaded Resume</a>`;
-        }
-      }
+      renderCvStatus(resumeUrl);
 
       showMessage("Profile and resume saved successfully!");
     } catch (err) {

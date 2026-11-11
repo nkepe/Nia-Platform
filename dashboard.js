@@ -19,6 +19,7 @@ const ADMIN_EMAILS = [
 let cachedOpportunities = [];
 let userAppliedIds = new Set();
 let pendingOpportunityId = null;
+let currentUserProfile = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   if (!supabaseClient) {
@@ -36,7 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const { data: profile } = await supabaseClient
     .from("profiles")
-    .select("status")
+    .select("status, role, resume_url")
     .eq("id", session.user.id)
     .maybeSingle();
 
@@ -47,12 +48,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  currentUserProfile = profile;
   const user = session.user;
   const userEmail = user.email ? user.email.toLowerCase() : "";
+  const isAdmin = ADMIN_EMAILS.includes(userEmail) || profile?.role === "admin";
 
   // Reveal Admin Portal Button if Admin
   const adminPortalLink = document.getElementById("adminPortalLink");
-  if (adminPortalLink && ADMIN_EMAILS.includes(userEmail)) {
+  if (adminPortalLink && isAdmin) {
     adminPortalLink.classList.remove("hidden");
   }
 
@@ -68,8 +71,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // CV Modal Handlers
+  // CV Modal & Admin Modal Handlers
   setupCvModal();
+  setupAdminNoticeModal();
 
   // Setup Filters
   const searchInput = document.getElementById("searchInput");
@@ -83,6 +87,35 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Initial Load of Opportunities & Applications
   await loadOpportunities(user);
 });
+
+// Admin Notice Modal Handler
+function setupAdminNoticeModal() {
+  const adminModal = document.getElementById("adminNoticeModal");
+  const closeAdminBtn = document.getElementById("closeAdminNoticeBtn");
+  const dismissAdminBtn = document.getElementById("dismissAdminNoticeBtn");
+
+  const hideAdminModal = () => {
+    if (adminModal) adminModal.classList.add("hidden");
+  };
+
+  if (closeAdminBtn) closeAdminBtn.addEventListener("click", hideAdminModal);
+  if (dismissAdminBtn) dismissAdminBtn.addEventListener("click", hideAdminModal);
+
+  if (adminModal) {
+    adminModal.addEventListener("click", (e) => {
+      if (e.target === adminModal) hideAdminModal();
+    });
+  }
+}
+
+function showAdminNotice() {
+  const adminModal = document.getElementById("adminNoticeModal");
+  if (adminModal) {
+    adminModal.classList.remove("hidden");
+  } else {
+    alert("Administrators are restricted from applying for opportunities.");
+  }
+}
 
 // CV Advice Modal Setup
 function setupCvModal() {
@@ -239,7 +272,7 @@ function filterAndRenderFeed() {
   }).join("");
 }
 
-// Check Profile CV and Trigger Modal or Execute Application
+// Check Profile Role & CV before Application
 window.applyOpportunity = async function (opportunityId) {
   if (!supabaseClient) return;
 
@@ -249,14 +282,28 @@ window.applyOpportunity = async function (opportunityId) {
     return;
   }
 
-  const { data: profile } = await supabaseClient
-    .from("profiles")
-    .select("resume_url")
-    .eq("id", user.id)
-    .maybeSingle();
+  const userEmail = user.email ? user.email.toLowerCase() : "";
 
-  // If no CV uploaded, open the advisory modal
-  if (!profile?.resume_url) {
+  // Fetch or use cached profile to verify role
+  if (!currentUserProfile) {
+    const { data: profile } = await supabaseClient
+      .from("profiles")
+      .select("status, role, resume_url")
+      .eq("id", user.id)
+      .maybeSingle();
+    currentUserProfile = profile;
+  }
+
+  const isAdmin = ADMIN_EMAILS.includes(userEmail) || currentUserProfile?.role === "admin";
+
+  // Prevent Admins from applying
+  if (isAdmin) {
+    showAdminNotice();
+    return;
+  }
+
+  // If no CV uploaded, open advisory modal
+  if (!currentUserProfile?.resume_url) {
     pendingOpportunityId = opportunityId;
     const cvModal = document.getElementById("cvAdviceModal");
     if (cvModal) {
@@ -265,8 +312,8 @@ window.applyOpportunity = async function (opportunityId) {
     }
   }
 
-  // If CV exists, apply immediately
-  await executeApplication(opportunityId, profile?.resume_url || null);
+  // If non-admin and CV check passes, execute application
+  await executeApplication(opportunityId, currentUserProfile?.resume_url || null);
 };
 
 // Database Insertion
